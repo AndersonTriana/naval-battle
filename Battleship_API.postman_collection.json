@@ -1,0 +1,3125 @@
+{
+  "info": {
+    "_postman_id": "battleship-api-collection",
+    "name": "Battleship API",
+    "description": "Colección completa para probar la API de Batalla Naval con flujos completos de admin y jugadores",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "description": "Authentication endpoints for admin and players",
+      "item": [
+        {
+          "name": "Register Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Has user data\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "    pm.environment.set(\"admin_id\", json.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Register admin user for managing ship templates and base fleets"
+          },
+          "response": []
+        },
+        {
+          "name": "Register Player 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Has user data\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "    pm.environment.set(\"player1_id\", json.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{player1_username}}\",\n  \"password\": \"{{player1_password}}\",\n  \"role\": \"player\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Register first player for testing game flow"
+          },
+          "response": []
+        },
+        {
+          "name": "Register Player 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Has user data\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "    pm.environment.set(\"player2_id\", json.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{player2_username}}\",\n  \"password\": \"{{player2_password}}\",\n  \"role\": \"player\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Register second player for testing game flow"
+          },
+          "response": []
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Has token\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('access_token');",
+                  "    pm.environment.set(\"admin_token\", json.access_token);",
+                  "    pm.environment.set(\"admin_id\", json.user.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login as admin to get access token"
+          },
+          "response": []
+        },
+        {
+          "name": "Login Player 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Has token\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('access_token');",
+                  "    pm.environment.set(\"player1_token\", json.access_token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{player1_username}}\",\n  \"password\": \"{{player1_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login as player 1 to get access token"
+          },
+          "response": []
+        },
+        {
+          "name": "Login Player 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Has token\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('access_token');",
+                  "    pm.environment.set(\"player2_token\", json.access_token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{player2_username}}\",\n  \"password\": \"{{player2_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login as player 2 to get access token"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Has user info\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('username');",
+                  "    pm.expect(json).to.have.property('role');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Get current authenticated user information"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Admin Endpoints",
+      "description": "Admin endpoints for managing ship templates and base fleets",
+      "item": [
+        {
+          "name": "Ship Templates",
+          "item": [
+            {
+              "name": "Create Ship Template - Portaaviones (5)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"Save template ID\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.environment.set(\"ship_template_portaaviones_id\", json.id);",
+                      "    pm.expect(json.name).to.equal(\"Portaaviones\");",
+                      "    pm.expect(json.size).to.equal(5);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Portaaviones\",\n  \"size\": 5,\n  \"description\": \"El barco más grande de la flota, capaz de transportar aeronaves\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/ship-templates",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "ship-templates"
+                  ]
+                },
+                "description": "Create aircraft carrier template (size 5)"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Ship Template - Acorazado (4)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"Save template ID\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.environment.set(\"ship_template_acorazado_id\", json.id);",
+                      "    pm.expect(json.name).to.equal(\"Acorazado\");",
+                      "    pm.expect(json.size).to.equal(4);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Acorazado\",\n  \"size\": 4,\n  \"description\": \"Buque de guerra pesado con gran poder de fuego\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/ship-templates",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "ship-templates"
+                  ]
+                },
+                "description": "Create battleship template (size 4)"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Ship Template - Crucero (3)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"Save template ID\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.environment.set(\"ship_template_crucero_id\", json.id);",
+                      "    pm.expect(json.name).to.equal(\"Crucero\");",
+                      "    pm.expect(json.size).to.equal(3);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Crucero\",\n  \"size\": 3,\n  \"description\": \"Barco de guerra rápido y versátil\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/ship-templates",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "ship-templates"
+                  ]
+                },
+                "description": "Create cruiser template (size 3)"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Ship Template - Submarino (3)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"Save template ID\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.environment.set(\"ship_template_submarino_id\", json.id);",
+                      "    pm.expect(json.name).to.equal(\"Submarino\");",
+                      "    pm.expect(json.size).to.equal(3);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Submarino\",\n  \"size\": 3,\n  \"description\": \"Nave submarina sigilosa\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/ship-templates",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "ship-templates"
+                  ]
+                },
+                "description": "Create submarine template (size 3)"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Ship Template - Destructor (2)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"Save template ID\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.environment.set(\"ship_template_destructor_id\", json.id);",
+                      "    pm.expect(json.name).to.equal(\"Destructor\");",
+                      "    pm.expect(json.size).to.equal(2);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Destructor\",\n  \"size\": 2,\n  \"description\": \"Buque de escolta ágil y maniobrable\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/ship-templates",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "ship-templates"
+                  ]
+                },
+                "description": "Create destroyer template (size 2)"
+              },
+              "response": []
+            },
+            {
+              "name": "List All Ship Templates",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Has templates\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.total).to.be.at.least(5);",
+                      "    pm.expect(json.items).to.be.an('array');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/ship-templates",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "ship-templates"
+                  ]
+                },
+                "description": "List all available ship templates"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Ship Template by ID",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Correct template\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.name).to.equal(\"Portaaviones\");",
+                      "    pm.expect(json.size).to.equal(5);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/ship-templates/{{ship_template_portaaviones_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "ship-templates",
+                    "{{ship_template_portaaviones_id}}"
+                  ]
+                },
+                "description": "Get specific ship template by ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Ship Template",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Template updated\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.name).to.equal(\"Portaaviones Nuclear\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Portaaviones Nuclear\",\n  \"size\": 5,\n  \"description\": \"Versión mejorada con propulsión nuclear\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/ship-templates/{{ship_template_portaaviones_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "ship-templates",
+                    "{{ship_template_portaaviones_id}}"
+                  ]
+                },
+                "description": "Update ship template details"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Ship Template",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 204 or 200\", () => {",
+                      "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/ship-templates/{{ship_template_destructor_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "ship-templates",
+                    "{{ship_template_destructor_id}}"
+                  ]
+                },
+                "description": "Delete ship template (NOTE: Recreate Destructor after this test)"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Base Fleets",
+          "item": [
+            {
+              "name": "Create Base Fleet - Standard",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"Save fleet ID\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.environment.set(\"base_fleet_standard_id\", json.id);",
+                      "    pm.expect(json.ship_templates).to.have.lengthOf(5);",
+                      "    pm.expect(json.board_size).to.equal(10);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Flota Estándar\",\n  \"board_size\": 10,\n  \"ship_template_ids\": [\n    \"{{ship_template_portaaviones_id}}\",\n    \"{{ship_template_acorazado_id}}\",\n    \"{{ship_template_crucero_id}}\",\n    \"{{ship_template_submarino_id}}\",\n    \"{{ship_template_destructor_id}}\"\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/base-fleets",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "base-fleets"
+                  ]
+                },
+                "description": "Create standard fleet with 5 ships on 10x10 board"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Base Fleet - Advanced",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"Save fleet ID\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.environment.set(\"base_fleet_advanced_id\", json.id);",
+                      "    pm.expect(json.board_size).to.equal(15);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Flota Avanzada\",\n  \"board_size\": 15,\n  \"ship_template_ids\": [\n    \"{{ship_template_portaaviones_id}}\",\n    \"{{ship_template_portaaviones_id}}\",\n    \"{{ship_template_acorazado_id}}\",\n    \"{{ship_template_crucero_id}}\",\n    \"{{ship_template_submarino_id}}\"\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/base-fleets",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "base-fleets"
+                  ]
+                },
+                "description": "Create advanced fleet with 2 carriers on 15x15 board"
+              },
+              "response": []
+            },
+            {
+              "name": "List All Base Fleets",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Has fleets\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.total).to.be.at.least(2);",
+                      "    pm.expect(json.items).to.be.an('array');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/base-fleets",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "base-fleets"
+                  ]
+                },
+                "description": "List all available base fleets"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Base Fleet by ID",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Correct fleet\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.name).to.equal(\"Flota Estándar\");",
+                      "    pm.expect(json.board_size).to.equal(10);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/base-fleets/{{base_fleet_standard_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "base-fleets",
+                    "{{base_fleet_standard_id}}"
+                  ]
+                },
+                "description": "Get specific base fleet by ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Base Fleet",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Flota Estándar Actualizada\",\n  \"board_size\": 10,\n  \"ship_template_ids\": [\n    \"{{ship_template_portaaviones_id}}\",\n    \"{{ship_template_acorazado_id}}\",\n    \"{{ship_template_crucero_id}}\",\n    \"{{ship_template_submarino_id}}\",\n    \"{{ship_template_destructor_id}}\"\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/base-fleets/{{base_fleet_standard_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "base-fleets",
+                    "{{base_fleet_standard_id}}"
+                  ]
+                },
+                "description": "Update base fleet details"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Base Fleet",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 204 or 200\", () => {",
+                      "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/base-fleets/{{base_fleet_advanced_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "base-fleets",
+                    "{{base_fleet_advanced_id}}"
+                  ]
+                },
+                "description": "Delete base fleet"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Player - Available Resources",
+          "item": [
+            {
+              "name": "Get Available Fleets (Player 1)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Has available fleets\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.items).to.be.an('array');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{player1_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/game/available-fleets",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "game",
+                    "available-fleets"
+                  ]
+                },
+                "description": "Get available fleets for Player 1"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Available Fleets (Player 2)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Has available fleets\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.items).to.be.an('array');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{player2_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/game/available-fleets",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "game",
+                    "available-fleets"
+                  ]
+                },
+                "description": "Get available fleets for Player 2"
+              },
+              "response": []
+            },
+            {
+              "name": "Get My Games (Player 1)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Has games list\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.items).to.be.an('array');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{player1_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/game/my-games",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "game",
+                    "my-games"
+                  ]
+                },
+                "description": "Get all games for Player 1"
+              },
+              "response": []
+            },
+            {
+              "name": "Get My Games (Player 2)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Has games list\", () => {",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.items).to.be.an('array');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{player2_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/game/my-games",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "game",
+                    "my-games"
+                  ]
+                },
+                "description": "Get all games for Player 2"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Game - Player 1 Complete Flow",
+      "description": "Complete game flow for Player 1",
+      "item": [
+        {
+          "name": "Create New Game",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Save game ID\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set(\"game_player1_id\", json.id);",
+                  "    pm.expect(json.status).to.equal(\"setup\");",
+                  "    pm.expect(json.board_size).to.equal(10);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"base_fleet_id\": \"{{base_fleet_standard_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/create",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "create"
+              ]
+            },
+            "description": "Create new game for Player 1 with standard fleet"
+          },
+          "response": []
+        },
+        {
+          "name": "Place Ship - Portaaviones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Ship placed\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.ship.coordinates).to.have.lengthOf(5);",
+                  "    pm.expect(json.ship.coordinates).to.include(\"A1\");",
+                  "    pm.expect(json.ship.coordinates).to.include(\"A5\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ship_template_id\": \"{{ship_template_portaaviones_id}}\",\n  \"start_coordinate\": \"A1\",\n  \"orientation\": \"horizontal\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player1_id}}/place-ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player1_id}}",
+                "place-ship"
+              ]
+            },
+            "description": "Place Portaaviones at A1-A5 horizontal"
+          },
+          "response": []
+        },
+        {
+          "name": "Place Ship - Acorazado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ship_template_id\": \"{{ship_template_acorazado_id}}\",\n  \"start_coordinate\": \"C1\",\n  \"orientation\": \"horizontal\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player1_id}}/place-ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player1_id}}",
+                "place-ship"
+              ]
+            },
+            "description": "Place Acorazado at C1-C4 horizontal"
+          },
+          "response": []
+        },
+        {
+          "name": "Place Ship - Crucero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ship_template_id\": \"{{ship_template_crucero_id}}\",\n  \"start_coordinate\": \"E1\",\n  \"orientation\": \"vertical\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player1_id}}/place-ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player1_id}}",
+                "place-ship"
+              ]
+            },
+            "description": "Place Crucero at E1-G1 vertical"
+          },
+          "response": []
+        },
+        {
+          "name": "Place Ship - Submarino",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ship_template_id\": \"{{ship_template_submarino_id}}\",\n  \"start_coordinate\": \"H5\",\n  \"orientation\": \"horizontal\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player1_id}}/place-ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player1_id}}",
+                "place-ship"
+              ]
+            },
+            "description": "Place Submarino at H5-H7 horizontal"
+          },
+          "response": []
+        },
+        {
+          "name": "Place Ship - Destructor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Game started\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.status).to.be.oneOf([\"in_progress\", \"setup\"]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ship_template_id\": \"{{ship_template_destructor_id}}\",\n  \"start_coordinate\": \"J9\",\n  \"orientation\": \"vertical\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player1_id}}/place-ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player1_id}}",
+                "place-ship"
+              ]
+            },
+            "description": "Place Destructor at J9-J10 vertical - Last ship"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Board Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"All ships placed\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.ships).to.have.lengthOf(5);",
+                  "    pm.expect(json.status).to.equal(\"in_progress\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player1_id}}/board",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player1_id}}",
+                "board"
+              ]
+            },
+            "description": "Get current board status with all ships"
+          },
+          "response": []
+        },
+        {
+          "name": "Shoot - Miss (A10)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Result is water\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.result).to.equal(\"water\");",
+                  "    pm.expect(json.ship_hit).to.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": \"A10\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player1_id}}/shoot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player1_id}}",
+                "shoot"
+              ]
+            },
+            "description": "Shoot at A10 - should miss"
+          },
+          "response": []
+        },
+        {
+          "name": "Shoot - Hit (E1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Result is hit\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.result).to.equal(\"hit\");",
+                  "    pm.expect(json.ship_hit).to.not.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": \"E1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player1_id}}/shoot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player1_id}}",
+                "shoot"
+              ]
+            },
+            "description": "Shoot at E1 - should hit Crucero"
+          },
+          "response": []
+        },
+        {
+          "name": "Shoot - Hit (F1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": \"F1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player1_id}}/shoot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player1_id}}",
+                "shoot"
+              ]
+            },
+            "description": "Continue hitting Crucero at F1"
+          },
+          "response": []
+        },
+        {
+          "name": "Shoot - Sunk (G1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Ship sunk\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.result).to.equal(\"sunk\");",
+                  "    pm.expect(json.ship_hit).to.equal(\"Crucero\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": \"G1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player1_id}}/shoot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player1_id}}",
+                "shoot"
+              ]
+            },
+            "description": "Final shot to sink Crucero at G1"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Shots History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Has shot history\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.total).to.be.at.least(4);",
+                  "    pm.expect(json.shots).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player1_id}}/shots-history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player1_id}}",
+                "shots-history"
+              ]
+            },
+            "description": "Get all shots history for this game"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Game Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Has stats\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('total_shots');",
+                  "    pm.expect(json).to.have.property('hits');",
+                  "    pm.expect(json).to.have.property('misses');",
+                  "    pm.expect(json).to.have.property('accuracy');",
+                  "    pm.expect(json.ships_sunk).to.be.at.least(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player1_id}}/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player1_id}}",
+                "stats"
+              ]
+            },
+            "description": "Get game statistics"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Game",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 204 or 200\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player1_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player1_id}}"
+              ]
+            },
+            "description": "Delete game after testing"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Game - Player 2 Complete Flow",
+      "description": "Complete game flow for Player 2 with different ship placements",
+      "item": [
+        {
+          "name": "Create New Game",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Save game ID\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set(\"game_player2_id\", json.id);",
+                  "    pm.expect(json.status).to.equal(\"setup\");",
+                  "    pm.expect(json.board_size).to.equal(10);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"base_fleet_id\": \"{{base_fleet_standard_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/create",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "create"
+              ]
+            },
+            "description": "Create new game for Player 2 with standard fleet"
+          },
+          "response": []
+        },
+        {
+          "name": "Place Ship - Portaaviones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Ship placed\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.ship.coordinates).to.have.lengthOf(5);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ship_template_id\": \"{{ship_template_portaaviones_id}}\",\n  \"start_coordinate\": \"B2\",\n  \"orientation\": \"horizontal\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}/place-ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}",
+                "place-ship"
+              ]
+            },
+            "description": "Place Portaaviones at B2-B6 horizontal"
+          },
+          "response": []
+        },
+        {
+          "name": "Place Ship - Acorazado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ship_template_id\": \"{{ship_template_acorazado_id}}\",\n  \"start_coordinate\": \"D5\",\n  \"orientation\": \"vertical\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}/place-ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}",
+                "place-ship"
+              ]
+            },
+            "description": "Place Acorazado at D5-G5 vertical"
+          },
+          "response": []
+        },
+        {
+          "name": "Place Ship - Crucero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ship_template_id\": \"{{ship_template_crucero_id}}\",\n  \"start_coordinate\": \"F8\",\n  \"orientation\": \"horizontal\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}/place-ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}",
+                "place-ship"
+              ]
+            },
+            "description": "Place Crucero at F8-H8 horizontal"
+          },
+          "response": []
+        },
+        {
+          "name": "Place Ship - Submarino",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ship_template_id\": \"{{ship_template_submarino_id}}\",\n  \"start_coordinate\": \"I2\",\n  \"orientation\": \"horizontal\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}/place-ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}",
+                "place-ship"
+              ]
+            },
+            "description": "Place Submarino at I2-I4 horizontal"
+          },
+          "response": []
+        },
+        {
+          "name": "Place Ship - Destructor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Game started\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.status).to.be.oneOf([\"in_progress\", \"setup\"]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ship_template_id\": \"{{ship_template_destructor_id}}\",\n  \"start_coordinate\": \"A9\",\n  \"orientation\": \"horizontal\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}/place-ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}",
+                "place-ship"
+              ]
+            },
+            "description": "Place Destructor at A9-A10 horizontal - Last ship"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Board Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"All ships placed\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.ships).to.have.lengthOf(5);",
+                  "    pm.expect(json.status).to.equal(\"in_progress\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}/board",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}",
+                "board"
+              ]
+            },
+            "description": "Get current board status with all ships"
+          },
+          "response": []
+        },
+        {
+          "name": "Shoot - Miss (C1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Result is water\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.result).to.equal(\"water\");",
+                  "    pm.expect(json.ship_hit).to.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": \"C1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}/shoot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}",
+                "shoot"
+              ]
+            },
+            "description": "Shoot at C1 - should miss"
+          },
+          "response": []
+        },
+        {
+          "name": "Shoot - Hit (D5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Result is hit\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.result).to.equal(\"hit\");",
+                  "    pm.expect(json.ship_hit).to.not.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": \"D5\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}/shoot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}",
+                "shoot"
+              ]
+            },
+            "description": "Shoot at D5 - should hit Acorazado"
+          },
+          "response": []
+        },
+        {
+          "name": "Shoot - Hit (E5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": \"E5\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}/shoot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}",
+                "shoot"
+              ]
+            },
+            "description": "Continue hitting Acorazado at E5"
+          },
+          "response": []
+        },
+        {
+          "name": "Shoot - Hit (F5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": \"F5\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}/shoot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}",
+                "shoot"
+              ]
+            },
+            "description": "Continue hitting Acorazado at F5"
+          },
+          "response": []
+        },
+        {
+          "name": "Shoot - Sunk (G5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Ship sunk\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.result).to.equal(\"sunk\");",
+                  "    pm.expect(json.ship_hit).to.equal(\"Acorazado\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": \"G5\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}/shoot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}",
+                "shoot"
+              ]
+            },
+            "description": "Final shot to sink Acorazado at G5"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Shots History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Has shot history\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.total).to.be.at.least(5);",
+                  "    pm.expect(json.shots).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}/shots-history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}",
+                "shots-history"
+              ]
+            },
+            "description": "Get all shots history for this game"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Game Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Has stats\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('total_shots');",
+                  "    pm.expect(json).to.have.property('hits');",
+                  "    pm.expect(json).to.have.property('misses');",
+                  "    pm.expect(json).to.have.property('accuracy');",
+                  "    pm.expect(json.ships_sunk).to.be.at.least(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}",
+                "stats"
+              ]
+            },
+            "description": "Get game statistics"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Game",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 204 or 200\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player2_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}"
+              ]
+            },
+            "description": "Delete game after testing"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Testing & Edge Cases",
+      "description": "Test edge cases and error handling",
+      "item": [
+        {
+          "name": "Try to shoot before placing ships",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 400 - Bad Request\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});",
+                  "pm.test(\"Error message about game not ready\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.detail || json.message).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Create a new game first",
+                  "const createGameRequest = {",
+                  "  url: pm.environment.get('base_url') + '/game/create',",
+                  "  method: 'POST',",
+                  "  header: {",
+                  "    'Authorization': 'Bearer ' + pm.environment.get('player1_token'),",
+                  "    'Content-Type': 'application/json'",
+                  "  },",
+                  "  body: {",
+                  "    mode: 'raw',",
+                  "    raw: JSON.stringify({",
+                  "      base_fleet_id: pm.environment.get('base_fleet_standard_id')",
+                  "    })",
+                  "  }",
+                  "};",
+                  "",
+                  "pm.sendRequest(createGameRequest, (err, res) => {",
+                  "  if (!err && res.code === 201) {",
+                  "    const gameData = res.json();",
+                  "    pm.environment.set('test_game_id', gameData.id);",
+                  "  }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": \"A1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{test_game_id}}/shoot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{test_game_id}}",
+                "shoot"
+              ]
+            },
+            "description": "Try to shoot before all ships are placed - should fail"
+          },
+          "response": []
+        },
+        {
+          "name": "Try to place ship out of bounds",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 400 - Bad Request\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});",
+                  "pm.test(\"Error message about out of bounds\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.detail || json.message).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ship_template_id\": \"{{ship_template_portaaviones_id}}\",\n  \"start_coordinate\": \"A8\",\n  \"orientation\": \"horizontal\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{test_game_id}}/place-ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{test_game_id}}",
+                "place-ship"
+              ]
+            },
+            "description": "Try to place 5-cell ship at A8 horizontal (goes beyond A10) - should fail"
+          },
+          "response": []
+        },
+        {
+          "name": "Place first ship for overlap test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ship_template_id\": \"{{ship_template_portaaviones_id}}\",\n  \"start_coordinate\": \"A1\",\n  \"orientation\": \"horizontal\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{test_game_id}}/place-ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{test_game_id}}",
+                "place-ship"
+              ]
+            },
+            "description": "Place Portaaviones at A1-A5 for overlap test"
+          },
+          "response": []
+        },
+        {
+          "name": "Try to place overlapping ships",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 400 - Bad Request\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});",
+                  "pm.test(\"Error message about overlapping\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.detail || json.message).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ship_template_id\": \"{{ship_template_acorazado_id}}\",\n  \"start_coordinate\": \"A3\",\n  \"orientation\": \"horizontal\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{test_game_id}}/place-ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{test_game_id}}",
+                "place-ship"
+              ]
+            },
+            "description": "Try to place Acorazado overlapping with Portaaviones - should fail"
+          },
+          "response": []
+        },
+        {
+          "name": "Complete ship placement for duplicate shot test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Place remaining ships to complete setup",
+                  "const ships = [",
+                  "  { template: 'ship_template_acorazado_id', coord: 'C1', orientation: 'horizontal' },",
+                  "  { template: 'ship_template_crucero_id', coord: 'E1', orientation: 'vertical' },",
+                  "  { template: 'ship_template_submarino_id', coord: 'H5', orientation: 'horizontal' }",
+                  "];",
+                  "",
+                  "const baseUrl = pm.environment.get('base_url');",
+                  "const token = pm.environment.get('player1_token');",
+                  "const gameId = pm.environment.get('test_game_id');",
+                  "",
+                  "ships.forEach((ship, index) => {",
+                  "  setTimeout(() => {",
+                  "    const placeShipRequest = {",
+                  "      url: `${baseUrl}/game/${gameId}/place-ship`,",
+                  "      method: 'POST',",
+                  "      header: {",
+                  "        'Authorization': `Bearer ${token}`,",
+                  "        'Content-Type': 'application/json'",
+                  "      },",
+                  "      body: {",
+                  "        mode: 'raw',",
+                  "        raw: JSON.stringify({",
+                  "          ship_template_id: pm.environment.get(ship.template),",
+                  "          start_coordinate: ship.coord,",
+                  "          orientation: ship.orientation",
+                  "        })",
+                  "      }",
+                  "    };",
+                  "    pm.sendRequest(placeShipRequest);",
+                  "  }, index * 200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ship_template_id\": \"{{ship_template_destructor_id}}\",\n  \"start_coordinate\": \"J9\",\n  \"orientation\": \"vertical\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{test_game_id}}/place-ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{test_game_id}}",
+                "place-ship"
+              ]
+            },
+            "description": "Place last ship to enable shooting"
+          },
+          "response": []
+        },
+        {
+          "name": "First shot at B10",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": \"B10\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{test_game_id}}/shoot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{test_game_id}}",
+                "shoot"
+              ]
+            },
+            "description": "Shoot at B10 first time - should succeed"
+          },
+          "response": []
+        },
+        {
+          "name": "Try to shoot same coordinate twice",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 400 - Bad Request\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});",
+                  "pm.test(\"Error message about already shot\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.detail || json.message).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": \"B10\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{test_game_id}}/shoot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{test_game_id}}",
+                "shoot"
+              ]
+            },
+            "description": "Try to shoot B10 again - should fail"
+          },
+          "response": []
+        },
+        {
+          "name": "Try player access to admin endpoints",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 403 - Forbidden\", () => {",
+                  "    pm.expect(pm.response.code).to.equal(403);",
+                  "});",
+                  "pm.test(\"Error message about permissions\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.detail || json.message).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Illegal Ship\",\n  \"size\": 10,\n  \"description\": \"This should not be allowed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/ship-templates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "ship-templates"
+              ]
+            },
+            "description": "Try to create ship template as player - should fail with 403"
+          },
+          "response": []
+        },
+        {
+          "name": "Try to access other player's game",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 403 or 404\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([403, 404]);",
+                  "});",
+                  "pm.test(\"Error message\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.detail || json.message).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/game/{{game_player2_id}}/board",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{game_player2_id}}",
+                "board"
+              ]
+            },
+            "description": "Try to access Player 2's game with Player 1's token - should fail"
+          },
+          "response": []
+        },
+        {
+          "name": "Try invalid coordinate format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 400 or 422\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});",
+                  "pm.test(\"Error message about invalid coordinate\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.detail || json.message).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": \"Z99\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/{{test_game_id}}/shoot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{test_game_id}}",
+                "shoot"
+              ]
+            },
+            "description": "Try to shoot at invalid coordinate Z99 - should fail"
+          },
+          "response": []
+        },
+        {
+          "name": "Try to create game with non-existent fleet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 404 - Not Found\", () => {",
+                  "    pm.expect(pm.response.code).to.equal(404);",
+                  "});",
+                  "pm.test(\"Error message about fleet not found\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.detail || json.message).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"base_fleet_id\": \"00000000-0000-0000-0000-000000000000\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/create",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "create"
+              ]
+            },
+            "description": "Try to create game with non-existent fleet ID - should fail"
+          },
+          "response": []
+        },
+        {
+          "name": "Cleanup - Delete test game",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 or 204\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{player1_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/game/{{test_game_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "game",
+                "{{test_game_id}}"
+              ]
+            },
+            "description": "Clean up test game"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
