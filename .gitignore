@@ -31,7 +31,8 @@ env/
 .virtualenv
 
 # IDEs
-.vscode/
+.vscode/*
+!.vscode/launch.json
 .idea/
 *.swp
 *.swo
