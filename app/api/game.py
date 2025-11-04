@@ -174,11 +174,38 @@ def get_board_state(
     
     stats = game.get_stats()
     
+    # Obtener lista de disparos realizados por el jugador (contra la IA)
+    player_shots = [
+        {
+            "coordinate": shot.coordinate,
+            "result": shot.result,
+            "coordinate_code": shot.coordinate_code
+        }
+        for shot in game.shots
+    ] if hasattr(game, 'shots') else []
+    
+    # Obtener lista de disparos realizados por la IA (contra el jugador)
+    enemy_shots = [
+        {
+            "coordinate": shot.coordinate,
+            "result": shot.result,
+            "coordinate_code": shot.coordinate_code
+        }
+        for shot in game.ai_shots
+    ] if hasattr(game, 'ai_shots') else []
+    
+    print(f"DEBUG player_shots: {player_shots[:3] if len(player_shots) > 0 else 'empty'}")
+    print(f"DEBUG enemy_shots: {enemy_shots[:3] if len(enemy_shots) > 0 else 'empty'}")
+    
     return {
         "game_id": game.id,
         "board_size": game.board_size,
         "status": game.status,
-        "ships": game_detail["ships"],
+        "current_turn": getattr(game, 'current_turn', 'player'),
+        "winner": getattr(game, 'winner', None),
+        "player_ships": game_detail["ships"],
+        "player_shots": player_shots,  # Disparos del jugador contra la IA
+        "enemy_shots": enemy_shots,  # Disparos de la IA contra el jugador
         "total_shots": stats["total_shots"],
         "hits": stats["hits"],
         "misses": stats["misses"]
@@ -237,7 +264,8 @@ def fire_shot(
         result=result["result"],
         ship_hit=result["ship_hit"],
         ship_sunk=result["ship_sunk"],
-        game_finished=result["game_finished"]
+        game_finished=result.get("game_won", False),
+        ai_shot=result.get("ai_shot")  # Incluir disparo de la IA
     )
 
 

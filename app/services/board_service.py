@@ -43,40 +43,42 @@ class BoardService:
         # Crear el ABB e insertar en orden balanceado
         bst = BinarySearchTree()
         for code in balanced_codes:
-            node = Node(id=code, data={"coordinate": code_to_coordinate(code)})
+            node = Node(id=code, data={"coordinate": code_to_coordinate(code, board_size)})
             bst.insert(node)
         
         return bst
     
     @staticmethod
-    def search_coordinate(bst: BinarySearchTree, coordinate: str) -> bool:
+    def search_coordinate(bst: BinarySearchTree, coordinate: str, board_size: int = 10) -> bool:
         """
         Busca una coordenada en el ABB.
         
         Args:
             bst: Árbol binario de búsqueda
             coordinate: Coordenada a buscar (ej: "A1")
+            board_size: Tamaño del tablero
         
         Returns:
             True si la coordenada existe, False en caso contrario
         """
-        code = coordinate_to_code(coordinate)
+        code = coordinate_to_code(coordinate, board_size)
         node = bst.search(code)
         return node is not None
     
     @staticmethod
-    def mark_coordinate_as_shot(bst: BinarySearchTree, coordinate: str) -> bool:
+    def mark_coordinate_as_shot(bst: BinarySearchTree, coordinate: str, board_size: int = 10) -> bool:
         """
         Marca una coordenada como disparada en el ABB.
         
         Args:
             bst: Árbol binario de búsqueda
-            coordinate: Coordenada a marcar
+            coordinate: Coordenada a marcar (ej: "A1")
+            board_size: Tamaño del tablero
         
         Returns:
             True si se marcó exitosamente, False si no existe
         """
-        code = coordinate_to_code(coordinate)
+        code = coordinate_to_code(coordinate, board_size)
         node = bst.search(code)
         
         if node:
@@ -88,18 +90,19 @@ class BoardService:
         return False
     
     @staticmethod
-    def is_coordinate_shot(bst: BinarySearchTree, coordinate: str) -> bool:
+    def is_coordinate_shot(bst: BinarySearchTree, coordinate: str, board_size: int = 10) -> bool:
         """
         Verifica si una coordenada ya fue disparada.
         
         Args:
             bst: Árbol binario de búsqueda
-            coordinate: Coordenada a verificar
+            coordinate: Coordenada a verificar (ej: "A1")
+            board_size: Tamaño del tablero
         
         Returns:
             True si ya fue disparada, False en caso contrario
         """
-        code = coordinate_to_code(coordinate)
+        code = coordinate_to_code(coordinate, board_size)
         node = bst.search(code)
         
         if node and node.data:
@@ -246,3 +249,52 @@ class BoardService:
                 node.data["occupied"] = True
                 node.data["ship_reference"] = ship_reference
                 node.data["coordinate"] = coord
+    
+    @staticmethod
+    def get_all_shots(bst: BinarySearchTree, board_size: int) -> List[dict]:
+        """
+        Obtiene todos los disparos realizados en el tablero.
+        
+        Args:
+            bst: Árbol binario de búsqueda
+            board_size: Tamaño del tablero
+        
+        Returns:
+            Lista de disparos con formato: [{"coordinate": "A1", "result": "water"}, ...]
+        """
+        shots = []
+        
+        def traverse(node):
+            if node is None:
+                return
+            
+            # Recorrer en orden
+            traverse(node.left)
+            
+            # Si el nodo fue disparado, agregarlo
+            if node.data and node.data.get("is_shot"):
+                coordinate = code_to_coordinate(node.id, board_size)
+                
+                # Determinar el resultado del disparo
+                is_occupied = node.data.get("occupied", False)
+                
+                if is_occupied:
+                    # Hay un barco aquí, verificar si está hundido
+                    ship_ref = node.data.get("ship_reference")
+                    if ship_ref and hasattr(ship_ref, 'is_sunk') and ship_ref.is_sunk:
+                        result = "sunk"
+                    else:
+                        result = "hit"
+                else:
+                    result = "water"
+                
+                shots.append({
+                    "coordinate": coordinate,
+                    "result": result,
+                    "coordinate_code": node.id
+                })
+            
+            traverse(node.right)
+        
+        traverse(bst.root)
+        return shots

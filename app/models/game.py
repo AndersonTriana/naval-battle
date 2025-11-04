@@ -60,6 +60,7 @@ class ShotResponse(BaseModel):
     ship_hit: Optional[str] = Field(None, description="Nombre del barco impactado")
     ship_sunk: bool = Field(default=False, description="Indica si el barco fue hundido")
     game_finished: bool = Field(default=False, description="Indica si el juego terminó")
+    ai_shot: Optional[dict] = Field(None, description="Disparo de la IA (si aplica)")
     
     model_config = {
         "json_schema_extra": {

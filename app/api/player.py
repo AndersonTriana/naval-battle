@@ -2,7 +2,7 @@
 Endpoints de jugador.
 """
 from fastapi import APIRouter, HTTPException, status, Depends
-from typing import List, Annotated
+from typing import List, Annotated, Optional
 
 from app.models.game import (
     GameCreate,
@@ -86,7 +86,8 @@ def get_fleet_details(
 
 @router.get("/my-games", response_model=GameListResponse)
 def list_my_games(
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(get_current_user)],
+    status: Optional[str] = None
 ):
     """
     Listar partidas del jugador.
@@ -94,8 +95,15 @@ def list_my_games(
     **Requiere autenticación.**
     
     Retorna todas las partidas del jugador actual con su estado.
+    
+    Args:
+        status: Filtrar por estado (opcional): 'in_progress', 'finished', 'setup'
     """
     games = get_player_games(current_user.id)
+    
+    # Filtrar por estado si se proporciona
+    if status:
+        games = [g for g in games if g.status == status]
     
     games_response = []
     for game in games:

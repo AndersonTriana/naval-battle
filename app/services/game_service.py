@@ -110,7 +110,7 @@ class GameService:
             return False, message, None
         
         # Crear instancia del barco
-        ship_instance = ShipService.create_ship_instance(ship_template_id, coordinates)
+        ship_instance = ShipService.create_ship_instance(ship_template_id, coordinates, game.board_size)
         if not ship_instance:
             return False, "Error al crear instancia del barco", None
         
@@ -119,11 +119,61 @@ class GameService:
         
         # Marcar coordenadas como ocupadas
         for coord in coordinates:
-            code = coordinate_to_code(coord)
+            code = coordinate_to_code(coord, game.board_size)
             game.occupied_coordinates[code] = ship_template_id
         
         # Agregar a la lista de barcos del juego
         game.ships.append(ship_instance)
+        
+        # Verificar si todos los barcos fueron colocados
+        # Si es así, iniciar automáticamente el juego e inicializar la IA
+        base_fleet = get_base_fleet(game.base_fleet_id)
+        if len(game.ships) == len(base_fleet.ship_template_ids):
+            # Inicializar IA
+            from app.services.ai_service import AIService
+            from app.services.board_service import BoardService
+            from app.structures.n_ary_tree import NaryTree
+            
+            # Crear tablero de la IA
+            game.ai_abb_tree = BoardService.create_balanced_bst(game.board_size)
+            game.ai_fleet_tree = NaryTree({"type": "fleet", "player": "ai"})
+            
+            # Obtener plantillas de barcos
+            ship_templates = []
+            for ship_template_id in base_fleet.ship_template_ids:
+                template = get_ship_template(ship_template_id)
+                if template:
+                    ship_templates.append({
+                        "id": ship_template_id,
+                        "size": template.size,
+                        "name": template.name
+                    })
+            
+            # Colocar barcos de la IA aleatoriamente
+            ai_placements = AIService.place_ships_randomly(
+                ship_templates,
+                game.board_size,
+                set()
+            )
+            
+            # Crear instancias de barcos de la IA
+            for placement in ai_placements:
+                ai_ship = ShipService.create_ship_instance(
+                    placement["template_id"],
+                    placement["coordinates"],
+                    game.board_size
+                )
+                if ai_ship:
+                    game.ai_ships.append(ai_ship)
+                    ShipService.add_ship_to_fleet(game.ai_fleet_tree, ai_ship)
+                    
+                    # Marcar coordenadas como ocupadas
+                    for coord in placement["coordinates"]:
+                        code = coordinate_to_code(coord, game.board_size)
+                        game.ai_occupied_coordinates[code] = placement["template_id"]
+            
+            game.status = "in_progress"
+            game.current_turn = "player"
         
         return True, "Barco colocado exitosamente", ship_instance
     
@@ -154,7 +204,7 @@ class GameService:
     @staticmethod
     def fire_shot(game_id: str, coordinate: str) -> tuple[bool, str, Optional[dict]]:
         """
-        Realiza un disparo en una partida.
+        Realiza un disparo del jugador contra la IA.
         
         Args:
             game_id: ID de la partida
@@ -170,21 +220,24 @@ class GameService:
         if game.status != "in_progress":
             return False, "La partida no está en progreso", None
         
+        if game.current_turn != "player":
+            return False, "No es tu turno", None
+        
         # Validar coordenada
         if not validate_coordinate(coordinate, game.board_size):
             return False, f"Coordenada {coordinate} inválida", None
         
-        coordinate_code = coordinate_to_code(coordinate)
+        coordinate_code = coordinate_to_code(coordinate, game.board_size)
         
-        # Verificar si ya fue disparada
-        if BoardService.is_coordinate_shot(game.abb_tree, coordinate):
+        # Verificar si ya fue disparada (en el tablero de la IA)
+        if BoardService.is_coordinate_shot(game.ai_abb_tree, coordinate, game.board_size):
             return False, "Esta coordenada ya fue disparada", None
         
-        # Marcar como disparada en el ABB
-        BoardService.mark_coordinate_as_shot(game.abb_tree, coordinate)
+        # Marcar como disparada en el ABB de la IA
+        BoardService.mark_coordinate_as_shot(game.ai_abb_tree, coordinate, game.board_size)
         
-        # Verificar si hay un barco en esa coordenada
-        ship_node = ShipService.find_ship_by_coordinate(game.fleet_tree, coordinate_code)
+        # Verificar si hay un barco de la IA en esa coordenada
+        ship_node = ShipService.find_ship_by_coordinate(game.ai_fleet_tree, coordinate_code)
         
         result = "water"
         ship_hit_name = None
@@ -192,7 +245,113 @@ class GameService:
         game_finished = False
         
         if ship_node:
-            # Impacto en barco
+            # Impacto en barco de la IA
+            segment_found, is_sunk = ShipService.hit_ship_segment(
+                game.ai_fleet_tree,
+                ship_node,
+                coordinate_code
+            )
+            
+            if segment_found:
+                result = "sunk" if is_sunk else "hit"
+                ship_hit_name = ship_node.data.get("ship_name")
+                ship_sunk = is_sunk
+                
+                # Actualizar estado del barco de la IA en la lista
+                ship_template_id = ship_node.data.get("ship_template_id")
+                for ship in game.ai_ships:
+                    if ship.ship_template_id == ship_template_id:
+                        # Marcar segmento como impactado
+                        for segment in ship.segments:
+                            if segment.coordinate_code == coordinate_code:
+                                segment.is_hit = True
+                        
+                        # Verificar si todos los segmentos están impactados
+                        all_segments_hit = all(seg.is_hit for seg in ship.segments)
+                        
+                        # Si todos los segmentos están impactados, el barco está hundido
+                        if all_segments_hit:
+                            ship.is_sunk = True
+                            print(f"DEBUG: Barco IA hundido: {ship.ship_name} (template_id: {ship_template_id})")
+                        break
+                
+                # Verificar si todos los barcos de la IA fueron hundidos
+                fleet_status = ShipService.get_fleet_status(game.ai_fleet_tree)
+                if fleet_status["all_ships_sunk"]:
+                    game.status = "finished"
+                    game.winner = "player"
+                    game.finished_at = datetime.now()
+                    game_finished = True
+        
+        # Registrar disparo del jugador
+        shot = ShotData(
+            coordinate=coordinate,
+            coordinate_code=coordinate_code,
+            result=result,
+            timestamp=datetime.now()
+        )
+        game.shots.append(shot)
+        
+        # Cambiar turno a la IA si el juego no terminó
+        if not game_finished:
+            game.current_turn = "ai"
+            
+            # Turno de la IA
+            ai_shot_result = GameService._ai_turn(game)
+        else:
+            ai_shot_result = None
+        
+        shot_result = {
+            "coordinate": coordinate,
+            "coordinate_code": coordinate_code,
+            "result": result,
+            "ship_hit": ship_hit_name,
+            "ship_sunk": ship_sunk,
+            "game_won": game_finished,
+            "ai_shot": ai_shot_result  # Incluir disparo de la IA
+        }
+        
+        # Volver turno al jugador
+        if not game_finished:
+            game.current_turn = "player"
+        
+        return True, "Disparo realizado", shot_result
+    
+    @staticmethod
+    def _ai_turn(game: 'Game') -> Optional[dict]:
+        """
+        Ejecuta el turno de la IA.
+        
+        Args:
+            game: Instancia del juego
+        
+        Returns:
+            Resultado del disparo de la IA o None si hay error
+        """
+        from app.services.ai_service import AIService
+        
+        # Obtener siguiente coordenada a disparar
+        ai_coordinate = AIService.get_next_shot(
+            game.board_size,
+            [{"coordinate": s.coordinate, "result": s.result} for s in game.ai_shots],
+            game.ai_last_hits,
+            game.difficulty
+        )
+        
+        coordinate_code = coordinate_to_code(ai_coordinate, game.board_size)
+        
+        # Marcar como disparada en el ABB del jugador
+        BoardService.mark_coordinate_as_shot(game.abb_tree, ai_coordinate, game.board_size)
+        
+        # Verificar si hay un barco del jugador en esa coordenada
+        ship_node = ShipService.find_ship_by_coordinate(game.fleet_tree, coordinate_code)
+        
+        result = "water"
+        ship_hit_name = None
+        ship_sunk = False
+        
+        if ship_node:
+            # Impacto en barco del jugador
             segment_found, is_sunk = ShipService.hit_ship_segment(
                 game.fleet_tree,
                 ship_node,
@@ -204,7 +363,7 @@ class GameService:
                 ship_hit_name = ship_node.data.get("ship_name")
                 ship_sunk = is_sunk
                 
-                # Actualizar estado del barco en la lista
+                # Actualizar estado del barco del jugador
                 for ship in game.ships:
                     if ship.ship_template_id == ship_node.data.get("ship_template_id"):
                         for segment in ship.segments:
@@ -212,33 +371,36 @@ class GameService:
                                 segment.is_hit = True
                         if is_sunk:
                             ship.is_sunk = True
+                            # Remover de last_hits si se hundió
+                            game.ai_last_hits = []
                         break
                 
-                # Verificar si todos los barcos fueron hundidos
+                # Si fue impacto pero no hundido, agregar a last_hits
+                if result == "hit":
+                    game.ai_last_hits.append(ai_coordinate)
+                
+                # Verificar si todos los barcos del jugador fueron hundidos
                 fleet_status = ShipService.get_fleet_status(game.fleet_tree)
                 if fleet_status["all_ships_sunk"]:
-                    update_game_status(game_id, "finished")
-                    game_finished = True
+                    game.status = "finished"
+                    game.winner = "ai"
+                    game.finished_at = datetime.now()
         
-        # Registrar disparo
-        shot = ShotData(
-            coordinate=coordinate,
+        # Registrar disparo de la IA
+        ai_shot = ShotData(
+            coordinate=ai_coordinate,
             coordinate_code=coordinate_code,
             result=result,
             timestamp=datetime.now()
         )
-        game.shots.append(shot)
+        game.ai_shots.append(ai_shot)
         
-        shot_result = {
-            "coordinate": coordinate,
-            "coordinate_code": coordinate_code,
+        return {
+            "coordinate": ai_coordinate,
             "result": result,
             "ship_hit": ship_hit_name,
-            "ship_sunk": ship_sunk,
-            "game_finished": game_finished
+            "ship_sunk": ship_sunk
         }
-        
-        return True, "Disparo realizado", shot_result
     
     @staticmethod
     def get_game_detail(game_id: str) -> Optional[dict]:

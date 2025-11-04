@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-900 text-white;
+  }
+}
+
+@layer components {
+  .cell {
+    @apply w-12 h-12 border border-gray-600 flex items-center justify-center cursor-pointer transition-all;
+  }
+  
+  .cell-water {
+    @apply bg-ocean-light hover:bg-ocean-deep;
+  }
+  
+  .cell-ship {
+    @apply bg-ship-intact;
+  }
+  
+  .cell-hit {
+    @apply bg-ship-damaged;
+  }
+  
+  .cell-miss {
+    @apply bg-ocean-miss;
+  }
+  
+  .btn-primary {
+    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors;
+  }
+  
+  .input-field {
+    @apply bg-gray-800 border border-gray-600 text-white px-4 py-2 rounded focus:outline-none focus:border-indigo-500;
+  }
+}
+
+/* Smooth transitions para tablero */
+.cell {
+  transition: all 0.2s ease;
+}
+
+/* Efecto hover más notable */
+.cell:not(:disabled):hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+}
+
+/* Animación para disparos */
+@keyframes hit-animation {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.cell-hit {
+  animation: hit-animation 0.3s ease;
+}

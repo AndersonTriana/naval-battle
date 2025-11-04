@@ -104,7 +104,7 @@ class ShipService:
         
         # Verificar si alguna coordenada ya está ocupada
         for coord in ship_coordinates:
-            code = coordinate_to_code(coord)
+            code = coordinate_to_code(coord, board_size)
             if code in occupied_coordinates:
                 return False, f"La coordenada {coord} ya está ocupada", []
         
@@ -113,7 +113,8 @@ class ShipService:
     @staticmethod
     def create_ship_instance(
         ship_template_id: str,
-        coordinates: List[str]
+        coordinates: List[str],
+        board_size: int = 10
     ) -> Optional[ShipInstanceData]:
         """
         Crea una instancia de barco con sus segmentos.
@@ -121,6 +122,7 @@ class ShipService:
         Args:
             ship_template_id: ID de la plantilla de barco
             coordinates: Lista de coordenadas del barco
+            board_size: Tamaño del tablero (para codificar coordenadas)
         
         Returns:
             Instancia de barco o None si la plantilla no existe
@@ -133,7 +135,7 @@ class ShipService:
         for coord in coordinates:
             segment = ShipSegmentData(
                 coordinate=coord,
-                coordinate_code=coordinate_to_code(coord),
+                coordinate_code=coordinate_to_code(coord, board_size),
                 is_hit=False
             )
             segments.append(segment)
@@ -271,12 +273,17 @@ class ShipService:
                 for seg in segments
             ]
             
+            # Extraer lista de coordenadas para compatibilidad con frontend
+            coordinates = [seg.data.get("coordinate") for seg in segments if seg.data.get("coordinate")]
+            
             ship_info = {
                 "ship_template_id": ship_node.data.get("ship_template_id"),
                 "ship_name": ship_node.data.get("ship_name"),
+                "name": ship_node.data.get("ship_name"),  # Alias para frontend
                 "size": ship_node.data.get("size"),
                 "is_sunk": ship_node.data.get("is_sunk", False),
-                "segments": segments_data
+                "segments": segments_data,
+                "coordinates": coordinates  # Para compatibilidad con frontend
             }
             
             ships_list.append(ship_info)

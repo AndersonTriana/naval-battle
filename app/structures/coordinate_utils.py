@@ -8,31 +8,34 @@ from typing import List, Tuple
 import re
 
 
-def coordinate_to_code(coordinate: str) -> int:
+def coordinate_to_code(coordinate: str, board_size: int = 10) -> int:
     """
     Convierte una coordenada en formato "A1" a su código numérico.
     
     Args:
         coordinate: Coordenada en formato letra+número (ej: "A1", "J10")
+        board_size: Tamaño del tablero (para determinar el multiplicador)
     
     Returns:
-        Código numérico (FilaNumérica × 10 + Columna)
+        Código numérico único
     
     Raises:
         ValueError: Si el formato de la coordenada es inválido
     
     Examples:
-        >>> coordinate_to_code("A1")
+        >>> coordinate_to_code("A1", 10)
         11
-        >>> coordinate_to_code("B3")
+        >>> coordinate_to_code("B3", 10)
         23
-        >>> coordinate_to_code("J10")
+        >>> coordinate_to_code("J10", 10)
         100
+        >>> coordinate_to_code("A12", 15)
+        112
     """
     # Validar formato
     match = re.match(r'^([A-Z])(\d+)$', coordinate.upper())
     if not match:
-        raise ValueError(f"Formato de coordenada inválido: {coordinate}")
+        raise ValueError(f"Formato de coordenada inválido: '{coordinate}'")
     
     letter, number = match.groups()
     
@@ -40,39 +43,52 @@ def coordinate_to_code(coordinate: str) -> int:
     row = ord(letter) - ord('A') + 1
     col = int(number)
     
-    # Validar que la columna esté en rango válido (1-10)
-    if col < 1:
-        raise ValueError(f"Columna inválida: {col}")
+    # Validar que la fila esté en rango válido
+    if row < 1:
+        raise ValueError(f"Fila inválida: {letter} (row={row}). Las filas deben ser >= 1. Coordenada recibida: '{coordinate}'")
+    if row > board_size:
+        raise ValueError(f"Fila {letter} (row={row}) fuera de rango. El tablero es {board_size}x{board_size}. Coordenada: '{coordinate}'")
     
-    # Aplicar fórmula: FilaNumérica × 10 + (Columna % 10)
-    # Esto hace que columna 10 se codifique como 0
-    return row * 10 + (col % 10)
+    # Validar que la columna esté en rango válido
+    if col < 1:
+        raise ValueError(f"Columna inválida: {col}. Las columnas deben ser >= 1. Coordenada recibida: '{coordinate}'")
+    if col > board_size:
+        raise ValueError(f"Columna {col} fuera de rango. El tablero es {board_size}x{board_size}. Coordenada: '{coordinate}'")
+    
+    # Usar multiplicador apropiado según tamaño del tablero
+    # Para tableros >= 10, necesitamos multiplicador 100 para evitar ambigüedad
+    # Ejemplo: J10 en tablero 10x10 = 10*100+10 = 1010 (no 10*10+10 = 110)
+    multiplier = 100 if board_size >= 10 else 10
+    
+    return row * multiplier + col
 
 
-def code_to_coordinate(code: int) -> str:
+def code_to_coordinate(code: int, board_size: int = 10) -> str:
     """
     Convierte un código numérico a coordenada en formato "A1".
     
     Args:
         code: Código numérico
+        board_size: Tamaño del tablero (para determinar el multiplicador)
     
     Returns:
         Coordenada en formato letra+número
     
     Examples:
-        >>> code_to_coordinate(11)
+        >>> code_to_coordinate(11, 10)
         'A1'
-        >>> code_to_coordinate(23)
+        >>> code_to_coordinate(23, 10)
         'B3'
-        >>> code_to_coordinate(100)
+        >>> code_to_coordinate(100, 10)
         'J10'
+        >>> code_to_coordinate(112, 15)
+        'A12'
     """
-    row = code // 10
-    col = code % 10
+    # Usar multiplicador apropiado según tamaño del tablero
+    multiplier = 100 if board_size >= 10 else 10
     
-    # Si col es 0, significa que es la columna 10
-    if col == 0:
-        col = 10
+    row = code // multiplier
+    col = code % multiplier
     
     # Convertir número a letra (1=A, 2=B, ..., 26=Z)
     letter = chr(ord('A') + row - 1)
@@ -106,24 +122,31 @@ def generate_all_coordinates(board_size: int) -> List[str]:
 
 def generate_coordinate_codes(board_size: int) -> List[int]:
     """
-    Genera todos los códigos de coordenadas para un tablero de tamaño NxN.
+    Genera todos los códigos de coordenadas para un tablero de tamaño dado.
+    
+    Para tableros <= 10x10: usa formato row*10 + col (ej: A1=11, B2=22)
+    Para tableros > 10x10: usa formato row*100 + col (ej: A1=101, B2=202)
     
     Args:
         board_size: Tamaño del tablero (N)
     
     Returns:
-        Lista de códigos numéricos
+        Lista de códigos numéricos únicos
     
     Examples:
         >>> generate_coordinate_codes(3)
         [11, 12, 13, 21, 22, 23, 31, 32, 33]
+        >>> generate_coordinate_codes(12)
+        [101, 102, ..., 1212]
     """
     codes = []
     
+    # Usar multiplicador más grande para tableros grandes
+    multiplier = 100 if board_size > 10 else 10
+    
     for row in range(1, board_size + 1):
         for col in range(1, board_size + 1):
-            # Usar módulo 10 para que columna 10 se codifique como 0
-            codes.append(row * 10 + (col % 10))
+            codes.append(row * multiplier + col)
     
     return codes
 
@@ -219,29 +242,44 @@ def get_adjacent_coordinates(coordinate: str, board_size: int,
     Raises:
         ValueError: Si el barco no cabe en el tablero
     """
-    code = coordinate_to_code(coordinate)
-    row = code // 10
-    col = code % 10
+    # Usar multiplicador apropiado según tamaño del tablero
+    multiplier = 100 if board_size >= 10 else 10
+    
+    try:
+        code = coordinate_to_code(coordinate, board_size)
+    except ValueError as e:
+        raise ValueError(f"Error al convertir coordenada '{coordinate}': {e}")
+    
+    row = code // multiplier
+    col = code % multiplier
     
     coordinates = []
     
     if orientation == "horizontal":
         # Verificar que cabe horizontalmente
         if col + length - 1 > board_size:
-            raise ValueError(f"El barco no cabe horizontalmente desde {coordinate}")
+            raise ValueError(f"El barco no cabe horizontalmente desde {coordinate}. Columna final: {col + length - 1}, Tamaño tablero: {board_size}")
         
         for i in range(length):
-            new_code = row * 10 + (col + i)
-            coordinates.append(code_to_coordinate(new_code))
+            new_code = row * multiplier + (col + i)
+            try:
+                coord = code_to_coordinate(new_code, board_size)
+                coordinates.append(coord)
+            except Exception as e:
+                raise ValueError(f"Error generando coordenada horizontal {i}: code={new_code}, board_size={board_size}, error={e}")
     
     elif orientation == "vertical":
         # Verificar que cabe verticalmente
         if row + length - 1 > board_size:
-            raise ValueError(f"El barco no cabe verticalmente desde {coordinate}")
+            raise ValueError(f"El barco no cabe verticalmente desde {coordinate}. Fila final: {row + length - 1}, Tamaño tablero: {board_size}")
         
         for i in range(length):
-            new_code = (row + i) * 10 + col
-            coordinates.append(code_to_coordinate(new_code))
+            new_code = (row + i) * multiplier + col
+            try:
+                coord = code_to_coordinate(new_code, board_size)
+                coordinates.append(coord)
+            except Exception as e:
+                raise ValueError(f"Error generando coordenada vertical {i}: code={new_code}, board_size={board_size}, error={e}")
     
     else:
         raise ValueError(f"Orientación inválida: {orientation}")
