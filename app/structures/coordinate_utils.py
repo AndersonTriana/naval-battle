@@ -124,8 +124,8 @@ def generate_coordinate_codes(board_size: int) -> List[int]:
     """
     Genera todos los códigos de coordenadas para un tablero de tamaño dado.
     
-    Para tableros <= 10x10: usa formato row*10 + col (ej: A1=11, B2=22)
-    Para tableros > 10x10: usa formato row*100 + col (ej: A1=101, B2=202)
+    Para tableros < 10: usa formato row*10 + col (ej: A1=11, B2=22)
+    Para tableros >= 10: usa formato row*100 + col (ej: A1=101, B2=202)
     
     Args:
         board_size: Tamaño del tablero (N)
@@ -136,13 +136,13 @@ def generate_coordinate_codes(board_size: int) -> List[int]:
     Examples:
         >>> generate_coordinate_codes(3)
         [11, 12, 13, 21, 22, 23, 31, 32, 33]
-        >>> generate_coordinate_codes(12)
-        [101, 102, ..., 1212]
+        >>> generate_coordinate_codes(10)
+        [101, 102, ..., 1010]
     """
     codes = []
     
-    # Usar multiplicador más grande para tableros grandes
-    multiplier = 100 if board_size > 10 else 10
+    # Usar multiplicador apropiado según tamaño del tablero
+    multiplier = 100 if board_size >= 10 else 10
     
     for row in range(1, board_size + 1):
         for col in range(1, board_size + 1):

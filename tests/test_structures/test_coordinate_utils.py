@@ -18,42 +18,42 @@ class TestCoordinateToCode:
     """Tests de conversión de coordenada a código."""
     
     def test_coordinate_to_code_a1(self):
-        """Convertir 'A1' -> 11."""
-        assert coordinate_to_code("A1") == 11
+        """Convertir 'A1' -> 101 (tablero 10x10)."""
+        assert coordinate_to_code("A1") == 101
     
     def test_coordinate_to_code_b3(self):
-        """Convertir 'B3' -> 23."""
-        assert coordinate_to_code("B3") == 23
+        """Convertir 'B3' -> 203 (tablero 10x10)."""
+        assert coordinate_to_code("B3") == 203
     
     def test_coordinate_to_code_j10(self):
-        """Convertir 'J10' -> 100."""
-        assert coordinate_to_code("J10") == 100
+        """Convertir 'J10' -> 1010 (tablero 10x10)."""
+        assert coordinate_to_code("J10") == 1010
     
     def test_coordinate_to_code_lowercase(self):
-        """Convertir coordenadas en minúsculas."""
-        assert coordinate_to_code("a1") == 11
-        assert coordinate_to_code("b3") == 23
+        """Convertir 'a1' (minúscula) -> 101."""
+        assert coordinate_to_code("a1") == 101
+        assert coordinate_to_code("b3") == 203
     
     def test_coordinate_to_code_mixed_case(self):
-        """Convertir coordenadas en mixed case."""
-        assert coordinate_to_code("A1") == 11
-        assert coordinate_to_code("a1") == 11
+        """Convertir 'B3' (mixto) -> 203."""
+        assert coordinate_to_code("B3") == 203
+        assert coordinate_to_code("a1") == 101
 
 
 class TestCodeToCoordinate:
     """Tests de conversión de código a coordenada."""
     
     def test_code_to_coordinate_11(self):
-        """Convertir 11 -> 'A1'."""
-        assert code_to_coordinate(11) == "A1"
+        """Convertir 101 -> 'A1' (tablero 10x10)."""
+        assert code_to_coordinate(101) == "A1"
     
     def test_code_to_coordinate_23(self):
-        """Convertir 23 -> 'B3'."""
-        assert code_to_coordinate(23) == "B3"
+        """Convertir 203 -> 'B3' (tablero 10x10)."""
+        assert code_to_coordinate(203) == "B3"
     
     def test_code_to_coordinate_100(self):
-        """Convertir 100 -> 'J10'."""
-        assert code_to_coordinate(100) == "J10"
+        """Convertir 1010 -> 'J10' (tablero 10x10)."""
+        assert code_to_coordinate(1010) == "J10"
     
     def test_code_to_coordinate_roundtrip(self):
         """Verificar que la conversión es reversible."""
@@ -67,10 +67,15 @@ class TestInvalidCoordinateFormat:
     """Tests de validación de formato de coordenadas."""
     
     def test_invalid_coordinate_format_z99(self):
-        """Verificar que 'Z99' es técnicamente válido pero fuera de rango del tablero."""
-        # Z99 es válido en formato pero fuera del rango de tableros normales
-        code = coordinate_to_code("Z99")
-        assert code == 269  # Z=26, 99%10=9 -> 26*10+9=269
+        """Verificar que 'Z99' es técnicamente válido en formato pero requiere tablero grande."""
+        # Z99 es válido en formato si el tablero es suficientemente grande (26x99)
+        # Para tablero 10x10 debe lanzar excepción
+        with pytest.raises(ValueError, match="fuera de rango"):
+            coordinate_to_code("Z99", 10)
+        
+        # Pero funciona con tablero suficientemente grande
+        code = coordinate_to_code("Z99", 99)
+        assert code == 2699  # Z=26, col=99 -> 26*100+99=2699
     
     def test_invalid_coordinate_format_a0(self):
         """Verificar que 'A0' lanza excepción por columna inválida."""

@@ -1,5 +1,5 @@
 """
-Árbol N-ario implementado con la forma 2: First-Child, Next-Sibling.
+Árbol N-ario implementado con la estructura: Padre → Lista de Hijos.
 
 Esta estructura se utiliza para representar la flota de cada jugador:
 - Raíz: Jugador
@@ -7,36 +7,41 @@ Esta estructura se utiliza para representar la flota de cada jugador:
 - Hijos de nivel 2: Segmentos de cada barco
 """
 from typing import Any, Optional, List, Dict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
 class TreeNode:
     """
-    Nodo del árbol N-ario usando First-Child, Next-Sibling.
+    Nodo del árbol N-ario con lista de hijos.
     
     Attributes:
         data: Datos almacenados en el nodo
-        first_child: Referencia al primer hijo
-        next_sibling: Referencia al siguiente hermano
+        children: Lista de nodos hijos
     """
     data: Any
-    first_child: Optional['TreeNode'] = None
-    next_sibling: Optional['TreeNode'] = None
+    children: List['TreeNode'] = field(default_factory=list)
     
     def __repr__(self) -> str:
         """Representación en string del nodo."""
-        return f"TreeNode(data={self.data})"
+        return f"TreeNode(data={self.data}, children={len(self.children)})"
 
 
 class NaryTree:
     """
-    Árbol N-ario usando la estructura First-Child, Next-Sibling.
+    Árbol N-ario usando la estructura Padre → Lista de Hijos.
     
     Estructura para la flota:
-    Raíz (Jugador) → Barco1 → Barco2 → Barco3
-                       ↓
-                    Segmento1 → Segmento2 → Segmento3
+    Raíz (Jugador)
+      ├─ Barco1
+      │   ├─ Segmento1
+      │   ├─ Segmento2
+      │   └─ Segmento3
+      ├─ Barco2
+      │   ├─ Segmento1
+      │   └─ Segmento2
+      └─ Barco3
+          └─ ...
     """
     
     def __init__(self, root_data: Any):
@@ -60,17 +65,7 @@ class NaryTree:
             El nuevo nodo hijo creado
         """
         new_child = TreeNode(data=child_data)
-        
-        if parent.first_child is None:
-            # Si no tiene hijos, este será el primero
-            parent.first_child = new_child
-        else:
-            # Si ya tiene hijos, agregarlo como hermano del último
-            current = parent.first_child
-            while current.next_sibling is not None:
-                current = current.next_sibling
-            current.next_sibling = new_child
-        
+        parent.children.append(new_child)
         return new_child
     
     def get_children(self, parent: TreeNode) -> List[TreeNode]:
@@ -83,14 +78,7 @@ class NaryTree:
         Returns:
             Lista de nodos hijos
         """
-        children = []
-        current = parent.first_child
-        
-        while current is not None:
-            children.append(current)
-            current = current.next_sibling
-        
-        return children
+        return parent.children
     
     def find_child_by_data(self, parent: TreeNode, predicate) -> Optional[TreeNode]:
         """
@@ -103,13 +91,9 @@ class NaryTree:
         Returns:
             El nodo encontrado o None
         """
-        current = parent.first_child
-        
-        while current is not None:
-            if predicate(current.data):
-                return current
-            current = current.next_sibling
-        
+        for child in parent.children:
+            if predicate(child.data):
+                return child
         return None
     
     def count_children(self, parent: TreeNode) -> int:
@@ -122,14 +106,7 @@ class NaryTree:
         Returns:
             Número de hijos
         """
-        count = 0
-        current = parent.first_child
-        
-        while current is not None:
-            count += 1
-            current = current.next_sibling
-        
-        return count
+        return len(parent.children)
     
     def traverse_preorder(self, node: Optional[TreeNode] = None, 
                          level: int = 0) -> List[tuple]:
@@ -149,10 +126,8 @@ class NaryTree:
         result = [(level, node)]
         
         # Recorrer todos los hijos
-        current_child = node.first_child
-        while current_child is not None:
-            result.extend(self.traverse_preorder(current_child, level + 1))
-            current_child = current_child.next_sibling
+        for child in node.children:
+            result.extend(self.traverse_preorder(child, level + 1))
         
         return result
     
@@ -174,10 +149,8 @@ class NaryTree:
             "children": []
         }
         
-        current_child = node.first_child
-        while current_child is not None:
-            result["children"].append(self.to_dict(current_child))
-            current_child = current_child.next_sibling
+        for child in node.children:
+            result["children"].append(self.to_dict(child))
         
         return result
     
@@ -196,15 +169,13 @@ class NaryTree:
         
         leaves = []
         
-        if node.first_child is None:
+        if len(node.children) == 0:
             # Es una hoja
             leaves.append(node)
         else:
             # Recorrer todos los hijos
-            current_child = node.first_child
-            while current_child is not None:
-                leaves.extend(self.get_all_leaves(current_child))
-                current_child = current_child.next_sibling
+            for child in node.children:
+                leaves.extend(self.get_all_leaves(child))
         
         return leaves
     
@@ -229,23 +200,11 @@ class NaryTree:
         Returns:
             True si se eliminó, False si no se encontró
         """
-        if parent.first_child is None:
-            return False
-        
-        # Caso especial: el hijo a eliminar es el primero
-        if parent.first_child == child_to_remove:
-            parent.first_child = child_to_remove.next_sibling
+        try:
+            parent.children.remove(child_to_remove)
             return True
-        
-        # Buscar en los hermanos
-        current = parent.first_child
-        while current.next_sibling is not None:
-            if current.next_sibling == child_to_remove:
-                current.next_sibling = child_to_remove.next_sibling
-                return True
-            current = current.next_sibling
-        
-        return False
+        except ValueError:
+            return False
     
     def add_ship(self, ship_data: dict) -> TreeNode:
         """

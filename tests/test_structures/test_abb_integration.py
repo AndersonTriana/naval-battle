@@ -35,21 +35,21 @@ class TestCoordinateEncoding:
     """Tests de codificación de coordenadas."""
     
     def test_coordinate_encoding_a1(self):
-        """Verificar codificación A1 -> 11."""
-        assert coordinate_to_code("A1") == 11
+        """Verificar codificación A1 -> 101 (tablero 10x10)."""
+        assert coordinate_to_code("A1") == 101
     
     def test_coordinate_encoding_b3(self):
-        """Verificar codificación B3 -> 23."""
-        assert coordinate_to_code("B3") == 23
+        """Verificar codificación B3 -> 203 (tablero 10x10)."""
+        assert coordinate_to_code("B3") == 203
     
     def test_coordinate_encoding_j10(self):
-        """Verificar codificación J10 -> 100."""
-        assert coordinate_to_code("J10") == 100
+        """Verificar codificación J10 -> 1010 (tablero 10x10)."""
+        assert coordinate_to_code("J10") == 1010
     
     def test_coordinate_encoding_case_insensitive(self):
         """Verificar que la codificación es case-insensitive."""
-        assert coordinate_to_code("a1") == 11
-        assert coordinate_to_code("A1") == 11
+        assert coordinate_to_code("a1") == 101
+        assert coordinate_to_code("A1") == 101
 
 
 class TestGenerateAllCoordinates:
@@ -66,8 +66,8 @@ class TestGenerateAllCoordinates:
         """Generar todas las coordenadas para un tablero 10x10."""
         coords = sample_coordinates_10x10
         assert len(coords) == 100
-        assert coords[0] == 11  # A1
-        assert coords[-1] == 100  # J10
+        assert coords[0] == 101  # A1 con multiplicador 100
+        assert coords[-1] == 1010  # J10 con multiplicador 100
     
     def test_generate_coordinates_sequential(self):
         """Verificar que las coordenadas se generan secuencialmente."""

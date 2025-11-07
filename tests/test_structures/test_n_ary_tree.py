@@ -1,5 +1,5 @@
 """
-Tests para el Árbol N-ario (First-Child, Next-Sibling).
+Tests para el Árbol N-ario (Padre → Lista de Hijos).
 Valida la implementación de la estructura de datos para gestión de flota.
 """
 import pytest
@@ -13,8 +13,7 @@ class TestTreeNode:
         """Crear un nodo del árbol."""
         node = TreeNode(data={"type": "player", "id": "player1"})
         assert node.data["type"] == "player"
-        assert node.first_child is None
-        assert node.next_sibling is None
+        assert len(node.children) == 0
     
     def test_tree_node_repr(self):
         """Verificar representación en string del nodo."""
@@ -35,8 +34,7 @@ class TestCreateTree:
         """Verificar que la raíz se crea correctamente."""
         tree = NaryTree(root_data={"player_id": "test-player"})
         assert tree.root.data["player_id"] == "test-player"
-        assert tree.root.first_child is None
-        assert tree.root.next_sibling is None
+        assert len(tree.root.children) == 0
 
 
 class TestAddChildNode:
@@ -48,8 +46,8 @@ class TestAddChildNode:
         
         ship_node = tree.add_child(tree.root, {"type": "ship", "name": "Portaaviones"})
         
-        assert tree.root.first_child is not None
-        assert tree.root.first_child == ship_node
+        assert len(tree.root.children) == 1
+        assert tree.root.children[0] == ship_node
         assert ship_node.data["name"] == "Portaaviones"
     
     def test_add_multiple_children(self):
@@ -60,29 +58,30 @@ class TestAddChildNode:
         ship2 = tree.add_child(tree.root, {"name": "Acorazado"})
         ship3 = tree.add_child(tree.root, {"name": "Crucero"})
         
-        # Verificar que están enlazados como hermanos
-        assert tree.root.first_child == ship1
-        assert ship1.next_sibling == ship2
-        assert ship2.next_sibling == ship3
-        assert ship3.next_sibling is None
+        # Verificar que están en la lista de hijos
+        assert len(tree.root.children) == 3
+        assert tree.root.children[0] == ship1
+        assert tree.root.children[1] == ship2
+        assert tree.root.children[2] == ship3
 
 
 class TestAddSiblingNode:
     """Tests de agregar nodos hermanos."""
     
     def test_add_sibling_node(self):
-        """Agregar hermano (otro barco) usando next_sibling."""
+        """Agregar hermano (otro barco) en la lista de hijos."""
         tree = NaryTree(root_data={"type": "player"})
         
         ship1 = tree.add_child(tree.root, {"name": "Portaaviones"})
         ship2 = tree.add_child(tree.root, {"name": "Acorazado"})
         
-        # Verificar relación de hermanos
-        assert ship1.next_sibling == ship2
-        assert ship2.next_sibling is None
+        # Verificar que ambos están en la lista de hijos
+        assert len(tree.root.children) == 2
+        assert tree.root.children[0] == ship1
+        assert tree.root.children[1] == ship2
     
     def test_sibling_chain(self):
-        """Verificar cadena de hermanos."""
+        """Verificar lista de hermanos."""
         tree = NaryTree(root_data={"type": "player"})
         
         ships = []
@@ -90,10 +89,10 @@ class TestAddSiblingNode:
             ship = tree.add_child(tree.root, {"name": f"Ship{i}"})
             ships.append(ship)
         
-        # Verificar cadena
-        for i in range(4):
-            assert ships[i].next_sibling == ships[i + 1]
-        assert ships[4].next_sibling is None
+        # Verificar que todos están en la lista
+        assert len(tree.root.children) == 5
+        for i in range(5):
+            assert tree.root.children[i] == ships[i]
 
 
 class TestAddGrandchildNode:
@@ -106,7 +105,8 @@ class TestAddGrandchildNode:
         ship = tree.add_child(tree.root, {"type": "ship", "name": "Portaaviones"})
         segment = tree.add_child(ship, {"type": "segment", "coordinate": "A1"})
         
-        assert ship.first_child == segment
+        assert len(ship.children) == 1
+        assert ship.children[0] == segment
         assert segment.data["coordinate"] == "A1"
     
     def test_add_multiple_grandchildren(self):
@@ -120,10 +120,10 @@ class TestAddGrandchildNode:
             seg = tree.add_child(ship, {"coordinate": f"A{i+1}", "is_hit": False})
             segments.append(seg)
         
-        # Verificar que están enlazados
-        assert ship.first_child == segments[0]
-        for i in range(4):
-            assert segments[i].next_sibling == segments[i + 1]
+        # Verificar que están en la lista de hijos
+        assert len(ship.children) == 5
+        for i in range(5):
+            assert ship.children[i] == segments[i]
 
 
 class TestTraverseTree:
@@ -230,17 +230,17 @@ class TestTreeStructure:
             })
         
         # Verificar estructura
-        assert tree.root.first_child == portaaviones
-        assert portaaviones.next_sibling == acorazado
-        assert acorazado.next_sibling is None
+        assert len(tree.root.children) == 2
+        assert tree.root.children[0] == portaaviones
+        assert tree.root.children[1] == acorazado
         
         # Verificar segmentos del portaaviones
-        assert portaaviones.first_child is not None
+        assert len(portaaviones.children) == 5
         segments = tree.get_children(portaaviones)
         assert len(segments) == 5
         
         # Verificar segmentos del acorazado
-        assert acorazado.first_child is not None
+        assert len(acorazado.children) == 4
         segments = tree.get_children(acorazado)
         assert len(segments) == 4
 
