@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useGame } from '../hooks/useGame';
 import FleetSelector from '../components/Game/FleetSelector';
 import ShipPlacementDragDrop from '../components/Game/ShipPlacementDragDrop';
@@ -9,8 +10,13 @@ import ShotResult from '../components/Game/ShotResult';
 import Loading from '../components/Layout/Loading';
 import { useNotification } from '../hooks/useNotification';
 import Notification from '../components/Layout/Notification';
+import GameModeSelector from '../components/Game/GameModeSelector';
+import JoinGameModal from '../components/Game/JoinGameModal';
+import MultiplayerInfo from '../components/Game/MultiplayerInfo';
+import { gameService } from '../services/gameService';
 
 const GamePage = () => {
+  const { gameId } = useParams();
   const {
     game,
     board,
@@ -18,36 +24,95 @@ const GamePage = () => {
     loading,
     error,
     createGame,
+    joinGame,
     placeShip,
     shoot,
     refreshBoard,
     refreshStats,
     loadShotsHistory,
+    loadGame,
     resetGame
   } = useGame();
 
-  const { notification, showError, showSuccess, hideNotification } = useNotification();
-  const [gamePhase, setGamePhase] = useState('select'); // 'select' | 'placement' | 'playing' | 'finished'
+  const { notification, showError, showSuccess, showInfo, hideNotification } = useNotification();
+  const [gamePhase, setGamePhase] = useState('mode'); // 'mode' | 'select' | 'join' | 'placement' | 'playing' | 'finished'
   const [placedShips, setPlacedShips] = useState([]);
   const [lastShot, setLastShot] = useState(null);
   const [lastAiShot, setLastAiShot] = useState(null);
+  const [isMultiplayer, setIsMultiplayer] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [previousTurnPlayerId, setPreviousTurnPlayerId] = useState(null);
+
+  // Cargar juego existente si hay gameId en la URL
+  useEffect(() => {
+    if (gameId) {
+      const loadExistingGame = async () => {
+        const result = await loadGame(gameId);
+        if (result.success) {
+          // El juego se cargó correctamente
+          // El useEffect de abajo manejará la fase
+        } else {
+          showError('No se pudo cargar la partida');
+        }
+      };
+      loadExistingGame();
+    }
+  }, [gameId, loadGame, showError]);
 
   // Verificar fase del juego cuando cambia el estado
   useEffect(() => {
     if (game) {
-      if (game.status === 'placing_ships') {
-        setGamePhase('placement');
-      } else if (game.status === 'in_progress') {
-        setGamePhase('playing');
-      } else if (game.status === 'finished') {
-        setGamePhase('finished');
+      // Detectar si es multijugador
+      if (game.is_multiplayer !== undefined) {
+        setIsMultiplayer(game.is_multiplayer);
+      }
+
+      // Mapear estados del backend a fases del frontend
+      const statusToPhase = {
+        'setup': 'placement',
+        'placing_ships': 'placement',
+        'waiting_for_player2': 'placement',
+        'both_players_setup': 'placement',
+        'player1_setup': 'placement',
+        'player2_setup': 'placement',
+        'in_progress': 'playing',
+        'player1_turn': 'playing',
+        'player2_turn': 'playing',
+        'finished': 'finished',
+        'player1_won': 'finished',
+        'player2_won': 'finished'
+      };
+
+      const newPhase = statusToPhase[game.status];
+      if (newPhase && newPhase !== gamePhase) {
+        // Si cambia de placement a playing, notificar
+        if (gamePhase === 'placement' && newPhase === 'playing' && isMultiplayer) {
+          showSuccess('¡Ambos jugadores listos! Comienza la batalla ⚔️');
+        }
+        setGamePhase(newPhase);
+      }
+      
+      // Detectar cambios de turno en multijugador
+      if (isMultiplayer && gamePhase === 'playing' && game.current_turn_player_id) {
+        if (previousTurnPlayerId && previousTurnPlayerId !== game.current_turn_player_id) {
+          // El turno cambió
+          const user = JSON.parse(localStorage.getItem('user') || '{}');
+          const isMyTurn = game.current_turn_player_id === user.id;
+          
+          if (isMyTurn) {
+            showSuccess('¡Es tu turno! 🎯');
+          } else {
+            showInfo('Turno del oponente ⏳');
+          }
+        }
+        setPreviousTurnPlayerId(game.current_turn_player_id);
       }
     }
     // También verificar si hay un ganador en board
     if (board && board.winner) {
       setGamePhase('finished');
     }
-  }, [game, board]);
+  }, [game, board, gamePhase, isMultiplayer, showSuccess, showInfo, previousTurnPlayerId]);
 
   // Cargar datos cuando el juego está activo
   useEffect(() => {
@@ -58,6 +123,24 @@ const GamePage = () => {
     }
   }, [gamePhase]);
 
+  // Polling en multijugador para sincronización en tiempo real
+  useEffect(() => {
+    if (isMultiplayer && game?.id && (gamePhase === 'placement' || gamePhase === 'playing')) {
+      // Durante colocación: detectar cuando el otro jugador termina
+      // Durante juego: detectar disparos del oponente y cambios de turno
+      const pollInterval = gamePhase === 'placement' ? 3000 : 2000; // Más frecuente durante el juego
+      
+      const interval = setInterval(async () => {
+        await refreshBoard();
+        if (gamePhase === 'playing') {
+          await refreshStats();
+        }
+      }, pollInterval);
+
+      return () => clearInterval(interval);
+    }
+  }, [gamePhase, isMultiplayer, game?.id, refreshBoard, refreshStats]);
+
   // Mostrar errores
   useEffect(() => {
     if (error) {
@@ -65,24 +148,56 @@ const GamePage = () => {
     }
   }, [error]);
 
+  // Handler: Seleccionar modo de juego
+  const handleModeSelected = (multiplayer) => {
+    setIsMultiplayer(multiplayer);
+    if (multiplayer) {
+      // Mostrar opciones: crear o unirse
+      setGamePhase('select');
+    } else {
+      // Modo vs IA: ir directo a selección de flota
+      setGamePhase('select');
+    }
+  };
+
   // Handler: Seleccionar flota
   const handleFleetSelected = async (fleet) => {
-    const result = await createGame(fleet.id);
+    const result = await createGame(fleet.id, isMultiplayer);
     if (result.success) {
       setPlacedShips([]);
       setGamePhase('placement');
-      showSuccess('¡Flota seleccionada! Coloca tus barcos');
+      if (isMultiplayer) {
+        showSuccess('¡Partida multijugador creada! Comparte el ID con tu oponente');
+      } else {
+        showSuccess('¡Flota seleccionada! Coloca tus barcos');
+      }
+    }
+  };
+
+  // Handler: Unirse a partida
+  const handleJoinGame = async (gameId) => {
+    const result = await joinGame(gameId);
+    
+    if (result.success) {
+      showSuccess(result.data?.message || '¡Te has unido a la partida!');
+      setShowJoinModal(false);
+      setIsMultiplayer(true);
+      setPlacedShips([]);
+      setGamePhase('placement');
+    } else {
+      showError(result.error || 'Error al unirse a la partida');
     }
   };
 
   // Handler: Colocar barco
-  const handlePlaceShip = async (shipTemplateId, startCoordinate, orientation) => {
+  const handlePlaceShip = async (shipTemplateId, startCoordinate, orientation, shipIndex) => {
     const result = await placeShip(shipTemplateId, startCoordinate, orientation);
     
     if (result.success) {
       // El backend devuelve: { ship: { name, coordinates }, ships_remaining_to_place }
       const newShip = {
         ship_template_id: shipTemplateId,
+        ship_index: shipIndex,  // Guardar el index para distinguir barcos del mismo tipo
         coordinates: result.data?.ship?.coordinates || [],
         name: result.data?.ship?.name || 'Barco'
       };
@@ -137,7 +252,8 @@ const GamePage = () => {
     resetGame();
     setPlacedShips([]);
     setLastShot(null);
-    setGamePhase('select');
+    setIsMultiplayer(false);
+    setGamePhase('mode');
   };
 
   // Renderizar según fase
@@ -173,25 +289,61 @@ const GamePage = () => {
         )}
       </div>
 
-      {/* FASE 1: Selección de Flota */}
+      {/* FASE 0: Selección de Modo */}
+      {gamePhase === 'mode' && (
+        <div className="space-y-6">
+          <GameModeSelector onModeSelected={handleModeSelected} />
+        </div>
+      )}
+
+      {/* FASE 1: Selección de Flota o Unirse */}
       {gamePhase === 'select' && (
-        <FleetSelector onFleetSelected={handleFleetSelected} />
+        <div className="space-y-6">
+          {isMultiplayer && (
+            <div className="flex justify-center mb-6">
+              <button
+                onClick={() => setShowJoinModal(true)}
+                className="btn-primary"
+              >
+                🔍 O Unirse a una Partida Existente
+              </button>
+            </div>
+          )}
+          <FleetSelector onFleetSelected={handleFleetSelected} />
+        </div>
       )}
 
       {/* FASE 2: Colocación de Barcos */}
       {gamePhase === 'placement' && game && (
-        <ShipPlacementDragDrop
-          shipsToPlace={game.ships_to_place || []}
-          placedShips={placedShips}
-          onPlaceShip={handlePlaceShip}
-          boardSize={game.board_size}
-          loading={loading}
-        />
+        <div className="space-y-6">
+          {/* Info multijugador */}
+          {isMultiplayer && (
+            <MultiplayerInfo game={game} />
+          )}
+          
+          <ShipPlacementDragDrop
+            shipsToPlace={game.ships_to_place || []}
+            placedShips={placedShips}
+            onPlaceShip={handlePlaceShip}
+            boardSize={game.board_size}
+            loading={loading}
+          />
+        </div>
       )}
 
       {/* FASE 3: Juego Activo */}
       {gamePhase === 'playing' && board && (
         <div>
+          {/* Info multijugador */}
+          {isMultiplayer && (
+            <div className="mb-6">
+              <MultiplayerInfo 
+                game={game} 
+                isMyTurn={board.is_my_turn}
+              />
+            </div>
+          )}
+
           {/* Controles superiores */}
           {stats && (
             <div className="mb-6">
@@ -242,22 +394,31 @@ const GamePage = () => {
       )}
 
       {/* FASE 4: Juego Terminado */}
-      {gamePhase === 'finished' && stats && (
-        <div className="text-center">
-          <div className="bg-gray-800 rounded-lg p-8 max-w-2xl mx-auto">
-            <div className="text-6xl mb-4">
-              {board?.winner === 'player' ? '🎉' : '💥'}
-            </div>
-            
-            <h2 className="text-3xl font-bold text-white mb-2">
-              {board?.winner === 'player' ? '¡Victoria!' : 'Derrota'}
-            </h2>
-            
-            <p className="text-gray-400 mb-6">
-              {board?.winner === 'player' 
-                ? '¡Has hundido toda la flota enemiga!' 
-                : 'La IA ha destruido tu flota'}
-            </p>
+      {gamePhase === 'finished' && stats && (() => {
+        // Determinar si el jugador actual ganó
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const isWinner = isMultiplayer 
+          ? board?.winner === user.id 
+          : board?.winner === 'player';
+        
+        return (
+          <div className="text-center">
+            <div className="bg-gray-800 rounded-lg p-8 max-w-2xl mx-auto">
+              <div className="text-6xl mb-4">
+                {isWinner ? '🎉' : '💥'}
+              </div>
+              
+              <h2 className="text-3xl font-bold text-white mb-2">
+                {isWinner ? '¡Victoria!' : 'Derrota'}
+              </h2>
+              
+              <p className="text-gray-400 mb-6">
+                {isWinner
+                  ? '¡Has hundido toda la flota enemiga!' 
+                  : isMultiplayer 
+                    ? 'Tu oponente ha destruido tu flota'
+                    : 'La IA ha destruido tu flota'}
+              </p>
 
             {/* Resumen de estadísticas */}
             <div className="grid grid-cols-2 gap-4 mb-6">
@@ -295,13 +456,23 @@ const GamePage = () => {
             </button>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Resultado de disparo */}
       {lastShot && (
         <ShotResult
           result={lastShot}
           onClose={() => setLastShot(null)}
+        />
+      )}
+
+      {/* Modal para unirse a partida */}
+      {showJoinModal && (
+        <JoinGameModal
+          onJoin={handleJoinGame}
+          onCancel={() => setShowJoinModal(false)}
+          loading={loading}
         />
       )}
       </div>

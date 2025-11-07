@@ -18,7 +18,8 @@ from app.storage.in_memory_store import (
     get_base_fleet,
     get_all_base_fleets,
     update_base_fleet,
-    delete_base_fleet
+    delete_base_fleet,
+    validate_fleet_capacity
 )
 
 
@@ -187,6 +188,17 @@ def create_base_fleet_endpoint(
                 detail=f"Plantilla de barco {template_id} no encontrada"
             )
     
+    # Validar capacidad de la flota (regla de negocio: máximo 80% del tablero)
+    is_valid, error_message = validate_fleet_capacity(
+        fleet_data.board_size, 
+        fleet_data.ship_template_ids
+    )
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_message
+        )
+    
     fleet = create_base_fleet(
         name=fleet_data.name,
         board_size=fleet_data.board_size,
@@ -269,6 +281,14 @@ def update_base_fleet_endpoint(
     
     **Requiere rol de administrador.**
     """
+    # Obtener flota actual para validaciones
+    current_fleet = get_base_fleet(fleet_id)
+    if not current_fleet:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Flota base no encontrada"
+        )
+    
     # Verificar plantillas si se actualizan
     if update_data.ship_template_ids:
         for template_id in update_data.ship_template_ids:
@@ -277,6 +297,17 @@ def update_base_fleet_endpoint(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Plantilla de barco {template_id} no encontrada"
                 )
+    
+    # Validar capacidad si se actualizan barcos o tamaño del tablero
+    board_size = update_data.board_size if update_data.board_size else current_fleet.board_size
+    ship_ids = update_data.ship_template_ids if update_data.ship_template_ids else current_fleet.ship_template_ids
+    
+    is_valid, error_message = validate_fleet_capacity(board_size, ship_ids)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_message
+        )
     
     fleet = update_base_fleet(
         fleet_id=fleet_id,

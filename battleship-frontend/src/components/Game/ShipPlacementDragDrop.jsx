@@ -14,8 +14,14 @@ const ShipPlacementDragDrop = ({
   const [hoverCell, setHoverCell] = useState(null);
   const [previewCoords, setPreviewCoords] = useState([]);
 
+  // Filtrar barcos que aún no han sido colocados
+  // Usar index para distinguir barcos del mismo tipo
   const remainingShips = shipsToPlace.filter(
-    ship => !placedShips.some(placed => placed.ship_template_id === ship.id)
+    ship => !placedShips.some(placed => 
+      placed.ship_index !== undefined 
+        ? placed.ship_index === ship.index  // Comparar por index si existe
+        : placed.ship_template_id === ship.id  // Fallback a id (legacy)
+    )
   );
 
   // Generar el tablero
@@ -88,7 +94,7 @@ const ShipPlacementDragDrop = ({
       return;
     }
 
-    onPlaceShip(draggedShip.id, cell.coordinate, orientation);
+    onPlaceShip(draggedShip.id, cell.coordinate, orientation, draggedShip.index);
     
     // Reset
     setDraggedShip(null);
@@ -188,30 +194,39 @@ const ShipPlacementDragDrop = ({
               <div>
                 <h4 className="text-lg font-bold text-white mb-3">Barcos Disponibles</h4>
                 <div className="space-y-2">
-                  {remainingShips.map((ship) => (
-                    <div
-                      key={ship.id}
-                      draggable={!loading}
-                      onDragStart={(e) => handleDragStart(e, ship)}
-                      onDragEnd={handleDragEnd}
-                      onClick={() => setSelectedShip(ship)}
-                      className={`p-3 rounded cursor-move transition-all ${
-                        selectedShip?.id === ship.id
-                          ? 'bg-indigo-600 text-white shadow-lg scale-105'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      } ${draggedShip?.id === ship.id ? 'opacity-50' : ''}`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">{ship.name}</span>
-                        <span className="text-sm">
-                          {'■'.repeat(ship.size)} ({ship.size})
-                        </span>
+                  {remainingShips.map((ship, idx) => {
+                    // Contar cuántos barcos del mismo tipo hay en total y cuál es este
+                    const sameTypeShips = shipsToPlace.filter(s => s.id === ship.id);
+                    const shipNumber = sameTypeShips.findIndex(s => s.index === ship.index) + 1;
+                    const displayName = sameTypeShips.length > 1 
+                      ? `${ship.name} #${shipNumber}` 
+                      : ship.name;
+                    
+                    return (
+                      <div
+                        key={ship.index !== undefined ? `ship-${ship.index}` : `ship-${ship.id}-${idx}`}
+                        draggable={!loading}
+                        onDragStart={(e) => handleDragStart(e, ship)}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => setSelectedShip(ship)}
+                        className={`p-3 rounded cursor-move transition-all ${
+                          selectedShip?.index === ship.index
+                            ? 'bg-indigo-600 text-white shadow-lg scale-105'
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        } ${draggedShip?.index === ship.index ? 'opacity-50' : ''}`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">{displayName}</span>
+                          <span className="text-sm">
+                            {'■'.repeat(ship.size)} ({ship.size})
+                          </span>
+                        </div>
+                        {ship.description && (
+                          <p className="text-xs text-gray-400 mt-1">{ship.description}</p>
+                        )}
                       </div>
-                      {ship.description && (
-                        <p className="text-xs text-gray-400 mt-1">{ship.description}</p>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

@@ -59,22 +59,69 @@ const FleetManagement = () => {
     }
   };
 
-  const toggleShipTemplate = (templateId) => {
+  const addShipTemplate = (templateId) => {
     setNewFleet(prev => ({
       ...prev,
-      ship_template_ids: prev.ship_template_ids.includes(templateId)
-        ? prev.ship_template_ids.filter(id => id !== templateId)
-        : [...prev.ship_template_ids, templateId]
+      ship_template_ids: [...prev.ship_template_ids, templateId]
     }));
   };
 
-  const toggleShipTemplateEdit = (templateId) => {
+  const removeShipTemplate = (templateId) => {
+    setNewFleet(prev => {
+      const index = prev.ship_template_ids.indexOf(templateId);
+      if (index > -1) {
+        const newIds = [...prev.ship_template_ids];
+        newIds.splice(index, 1);
+        return { ...prev, ship_template_ids: newIds };
+      }
+      return prev;
+    });
+  };
+
+  const getShipCount = (templateId, shipIds) => {
+    return shipIds.filter(id => id === templateId).length;
+  };
+
+  const calculateFleetStats = (shipIds, boardSize) => {
+    let totalCells = 0;
+    shipIds.forEach(templateId => {
+      const template = templates.find(t => t.id === templateId);
+      if (template) {
+        totalCells += template.size;
+      }
+    });
+    
+    const boardTotalCells = boardSize * boardSize;
+    const maxAllowedCells = Math.floor(boardTotalCells * 0.8);
+    const percentage = (totalCells / boardTotalCells * 100).toFixed(1);
+    const isValid = totalCells <= maxAllowedCells;
+    
+    return {
+      totalCells,
+      boardTotalCells,
+      maxAllowedCells,
+      percentage,
+      isValid
+    };
+  };
+
+  const addShipTemplateEdit = (templateId) => {
     setEditingFleet(prev => ({
       ...prev,
-      ship_template_ids: prev.ship_template_ids.includes(templateId)
-        ? prev.ship_template_ids.filter(id => id !== templateId)
-        : [...prev.ship_template_ids, templateId]
+      ship_template_ids: [...prev.ship_template_ids, templateId]
     }));
+  };
+
+  const removeShipTemplateEdit = (templateId) => {
+    setEditingFleet(prev => {
+      const index = prev.ship_template_ids.indexOf(templateId);
+      if (index > -1) {
+        const newIds = [...prev.ship_template_ids];
+        newIds.splice(index, 1);
+        return { ...prev, ship_template_ids: newIds };
+      }
+      return prev;
+    });
   };
 
   const handleEditFleet = (fleet) => {
@@ -261,25 +308,40 @@ const FleetManagement = () => {
                   </p>
                 ) : (
                   <div className="space-y-2 max-h-60 overflow-y-auto bg-gray-700 rounded p-3">
-                    {templates.map((template) => (
-                      <label
-                        key={template.id}
-                        className="flex items-center gap-3 cursor-pointer hover:bg-gray-600 p-2 rounded"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={newFleet.ship_template_ids.includes(template.id)}
-                          onChange={() => toggleShipTemplate(template.id)}
-                          className="w-4 h-4"
-                        />
-                        <div className="flex-1">
-                          <span className="text-white font-medium">{template.name}</span>
-                          <span className="text-gray-400 text-sm ml-2">
-                            (Tamaño: {template.size})
-                          </span>
+                    {templates.map((template) => {
+                      const count = getShipCount(template.id, newFleet.ship_template_ids);
+                      return (
+                        <div
+                          key={template.id}
+                          className="flex items-center gap-3 p-2 rounded bg-gray-600"
+                        >
+                          <div className="flex-1">
+                            <span className="text-white font-medium">{template.name}</span>
+                            <span className="text-gray-400 text-sm ml-2">
+                              (Tamaño: {template.size})
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => removeShipTemplate(template.id)}
+                              disabled={count === 0}
+                              className="w-8 h-8 bg-red-600 hover:bg-red-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white rounded font-bold transition-colors"
+                            >
+                              −
+                            </button>
+                            <span className="text-white font-bold w-8 text-center">{count}</span>
+                            <button
+                              type="button"
+                              onClick={() => addShipTemplate(template.id)}
+                              className="w-8 h-8 bg-green-600 hover:bg-green-700 text-white rounded font-bold transition-colors"
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
-                      </label>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
                 <p className="text-xs text-gray-400 mt-1">
@@ -287,8 +349,48 @@ const FleetManagement = () => {
                 </p>
               </div>
 
+              {/* Indicador de capacidad */}
+              {newFleet.ship_template_ids.length > 0 && (() => {
+                const stats = calculateFleetStats(newFleet.ship_template_ids, newFleet.board_size);
+                return (
+                  <div className={`p-3 rounded border ${
+                    stats.isValid 
+                      ? 'bg-green-900/30 border-green-700' 
+                      : 'bg-red-900/30 border-red-700'
+                  }`}>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className={`text-sm font-medium ${
+                        stats.isValid ? 'text-green-200' : 'text-red-200'
+                      }`}>
+                        {stats.isValid ? '✓ Capacidad válida' : '⚠️ Capacidad excedida'}
+                      </span>
+                      <span className={`text-lg font-bold ${
+                        stats.isValid ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {stats.percentage}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all ${
+                          stats.isValid ? 'bg-green-500' : 'bg-red-500'
+                        }`}
+                        style={{ width: `${Math.min(stats.percentage, 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-300">
+                      {stats.totalCells} / {stats.maxAllowedCells} celdas (máx 80% de {stats.boardTotalCells})
+                    </p>
+                  </div>
+                );
+              })()}
+
               <div className="flex gap-2">
-                <button type="submit" className="btn-primary flex-1">
+                <button 
+                  type="submit" 
+                  className="btn-primary flex-1"
+                  disabled={!calculateFleetStats(newFleet.ship_template_ids, newFleet.board_size).isValid}
+                >
                   Crear
                 </button>
                 <button
@@ -342,6 +444,93 @@ const FleetManagement = () => {
                 </p>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Barcos de la Flota *
+                </label>
+                {templates.length === 0 ? (
+                  <p className="text-sm text-gray-400">
+                    No hay plantillas de barcos. Crea plantillas primero.
+                  </p>
+                ) : (
+                  <div className="space-y-2 max-h-60 overflow-y-auto bg-gray-700 rounded p-3">
+                    {templates.map((template) => {
+                      const count = getShipCount(template.id, editingFleet.ship_template_ids);
+                      return (
+                        <div
+                          key={template.id}
+                          className="flex items-center gap-3 p-2 rounded bg-gray-600"
+                        >
+                          <div className="flex-1">
+                            <span className="text-white font-medium">{template.name}</span>
+                            <span className="text-gray-400 text-sm ml-2">
+                              (Tamaño: {template.size})
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => removeShipTemplateEdit(template.id)}
+                              disabled={count === 0}
+                              className="w-8 h-8 bg-red-600 hover:bg-red-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white rounded font-bold transition-colors"
+                            >
+                              −
+                            </button>
+                            <span className="text-white font-bold w-8 text-center">{count}</span>
+                            <button
+                              type="button"
+                              onClick={() => addShipTemplateEdit(template.id)}
+                              className="w-8 h-8 bg-green-600 hover:bg-green-700 text-white rounded font-bold transition-colors"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <p className="text-xs text-gray-400 mt-1">
+                  Seleccionados: {editingFleet.ship_template_ids.length} barcos
+                </p>
+              </div>
+
+              {/* Indicador de capacidad */}
+              {editingFleet.ship_template_ids.length > 0 && (() => {
+                const stats = calculateFleetStats(editingFleet.ship_template_ids, editingFleet.board_size);
+                return (
+                  <div className={`p-3 rounded border ${
+                    stats.isValid 
+                      ? 'bg-green-900/30 border-green-700' 
+                      : 'bg-red-900/30 border-red-700'
+                  }`}>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className={`text-sm font-medium ${
+                        stats.isValid ? 'text-green-200' : 'text-red-200'
+                      }`}>
+                        {stats.isValid ? '✓ Capacidad válida' : '⚠️ Capacidad excedida'}
+                      </span>
+                      <span className={`text-lg font-bold ${
+                        stats.isValid ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {stats.percentage}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all ${
+                          stats.isValid ? 'bg-green-500' : 'bg-red-500'
+                        }`}
+                        style={{ width: `${Math.min(stats.percentage, 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-300">
+                      {stats.totalCells} / {stats.maxAllowedCells} celdas (máx 80% de {stats.boardTotalCells})
+                    </p>
+                  </div>
+                );
+              })()}
+
               <div className="bg-yellow-900/30 border border-yellow-700 rounded p-3">
                 <p className="text-xs text-yellow-200">
                   ⚠️ Cambiar el tamaño del tablero puede afectar juegos existentes
@@ -349,7 +538,11 @@ const FleetManagement = () => {
               </div>
 
               <div className="flex gap-2">
-                <button type="submit" className="btn-primary flex-1">
+                <button 
+                  type="submit" 
+                  className="btn-primary flex-1"
+                  disabled={!calculateFleetStats(editingFleet.ship_template_ids, editingFleet.board_size).isValid}
+                >
                   Actualizar
                 </button>
                 <button

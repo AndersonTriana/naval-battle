@@ -70,48 +70,68 @@ class ShotData:
 class Game:
     """Clase para almacenar datos de una partida."""
     id: str
-    player_id: str
+    player1_id: str  # Renombrado de player_id
     base_fleet_id: str
     board_size: int
-    status: str  # "setup", "in_progress", "finished"
-    abb_tree: Any  # Instancia del ABB de coordenadas del jugador
-    fleet_tree: Any  # Instancia del árbol N-ario de flota del jugador
-    ships: List[ShipInstanceData] = field(default_factory=list)  # Barcos del jugador
-    shots: List[ShotData] = field(default_factory=list)  # Disparos del jugador
-    occupied_coordinates: Dict[int, str] = field(default_factory=dict)  # code -> ship_id
+    status: str  # "waiting_for_player2", "player1_setup", "player2_setup", "player1_turn", "player2_turn", "finished"
+    is_multiplayer: bool = False  # True para 2 jugadores, False para vs IA
     
-    # IA/Enemigo
-    ai_abb_tree: Any = None  # ABB de coordenadas de la IA
-    ai_fleet_tree: Any = None  # Árbol N-ario de flota de la IA
-    ai_ships: List[ShipInstanceData] = field(default_factory=list)  # Barcos de la IA
-    ai_shots: List[ShotData] = field(default_factory=list)  # Disparos de la IA
-    ai_occupied_coordinates: Dict[int, str] = field(default_factory=dict)
-    ai_last_hits: List[str] = field(default_factory=list)  # Impactos recientes sin hundir
+    # Jugador 1
+    player1_abb_tree: Any = None  # ABB de coordenadas del jugador 1
+    player1_fleet_tree: Any = None  # Árbol N-ario de flota del jugador 1
+    player1_ships: List[ShipInstanceData] = field(default_factory=list)  # Barcos del jugador 1
+    player1_shots: List[ShotData] = field(default_factory=list)  # Disparos del jugador 1
+    player1_occupied_coordinates: Dict[int, str] = field(default_factory=dict)  # code -> ship_id
+    
+    # Jugador 2 / IA
+    player2_id: Optional[str] = None  # ID del jugador 2 (None si es IA)
+    player2_abb_tree: Any = None  # ABB de coordenadas del jugador 2/IA
+    player2_fleet_tree: Any = None  # Árbol N-ario de flota del jugador 2/IA
+    player2_ships: List[ShipInstanceData] = field(default_factory=list)  # Barcos del jugador 2/IA
+    player2_shots: List[ShotData] = field(default_factory=list)  # Disparos del jugador 2/IA
+    player2_occupied_coordinates: Dict[int, str] = field(default_factory=dict)
+    player2_last_hits: List[str] = field(default_factory=list)  # Impactos recientes (para IA)
     
     # Control de turnos
-    current_turn: str = "player"  # "player" o "ai"
-    difficulty: str = "medium"  # "easy", "medium", "hard"
+    current_turn_player_id: Optional[str] = None  # ID del jugador actual
+    difficulty: str = "medium"  # "easy", "medium", "hard" (solo para IA)
     
     created_at: datetime = field(default_factory=datetime.now)
     finished_at: Optional[datetime] = None
-    winner: Optional[str] = None  # "player", "ai", o None
+    winner: Optional[str] = None  # ID del jugador ganador, o None
     
-    def get_stats(self) -> Dict[str, int]:
-        """Obtiene estadísticas de la partida."""
-        # Estadísticas del jugador (disparos contra la IA)
-        player_hits = sum(1 for shot in self.shots if shot.result in ["hit", "sunk"])
-        player_misses = sum(1 for shot in self.shots if shot.result == "water")
+    def get_stats(self, player_id: Optional[str] = None) -> Dict[str, int]:
+        """
+        Obtiene estadísticas de la partida.
         
-        # Barcos del jugador
-        player_ships_sunk = sum(1 for ship in self.ships if ship.is_sunk)
+        Args:
+            player_id: ID del jugador para el cual obtener stats (None = jugador 1)
+        """
+        # Determinar qué jugador
+        if player_id is None or player_id == self.player1_id:
+            my_shots = self.player1_shots
+            my_ships = self.player1_ships
+            enemy_ships = self.player2_ships
+            enemy_shots = self.player2_shots
+        else:
+            my_shots = self.player2_shots
+            my_ships = self.player2_ships
+            enemy_ships = self.player1_ships
+            enemy_shots = self.player1_shots
         
-        # Barcos de la IA hundidos por el jugador
-        ai_ships_sunk = sum(1 for ship in self.ai_ships if ship.is_sunk) if hasattr(self, 'ai_ships') else 0
-        print(f"DEBUG get_stats: ai_ships total={len(self.ai_ships) if hasattr(self, 'ai_ships') else 0}, sunk={ai_ships_sunk}")
+        # Estadísticas de mis disparos
+        player_hits = sum(1 for shot in my_shots if shot.result in ["hit", "sunk"])
+        player_misses = sum(1 for shot in my_shots if shot.result == "water")
         
-        # Estadísticas de la IA (disparos contra el jugador)
-        ai_hits = sum(1 for shot in self.ai_shots if shot.result in ["hit", "sunk"]) if hasattr(self, 'ai_shots') else 0
-        ai_misses = sum(1 for shot in self.ai_shots if shot.result == "water") if hasattr(self, 'ai_shots') else 0
+        # Mis barcos
+        player_ships_sunk = sum(1 for ship in my_ships if ship.is_sunk)
+        
+        # Barcos enemigos hundidos
+        enemy_ships_sunk = sum(1 for ship in enemy_ships if ship.is_sunk)
+        
+        # Estadísticas de disparos enemigos
+        enemy_hits = sum(1 for shot in enemy_shots if shot.result in ["hit", "sunk"])
+        enemy_misses = sum(1 for shot in enemy_shots if shot.result == "water")
         
         # Calcular duración del juego
         if self.finished_at:
@@ -120,29 +140,29 @@ class Game:
             duration = int((datetime.now() - self.created_at).total_seconds())
         
         # Calcular precisión
-        accuracy = round((player_hits / len(self.shots) * 100), 2) if len(self.shots) > 0 else 0
+        accuracy = round((player_hits / len(my_shots) * 100), 2) if len(my_shots) > 0 else 0
         
         return {
-            # Disparos del jugador
-            "total_shots": len(self.shots),
+            # Mis disparos
+            "total_shots": len(my_shots),
             "hits": player_hits,
             "misses": player_misses,
             "accuracy": accuracy,
             
-            # Barcos del jugador
-            "ships_total": len(self.ships),
-            "ships_remaining": len(self.ships) - player_ships_sunk,
-            "ships_sunk": player_ships_sunk,  # Barcos del jugador hundidos por la IA
+            # Mis barcos
+            "ships_total": len(my_ships),
+            "ships_remaining": len(my_ships) - player_ships_sunk,
+            "ships_sunk": player_ships_sunk,
             
-            # Barcos de la IA
-            "enemy_ships_sunk": ai_ships_sunk,  # Barcos de la IA hundidos por el jugador
+            # Barcos enemigos
+            "enemy_ships_sunk": enemy_ships_sunk,
             
-            # Disparos de la IA
-            "ai_total_shots": len(self.ai_shots) if hasattr(self, 'ai_shots') else 0,
-            "ai_hits": ai_hits,
-            "ai_misses": ai_misses,
+            # Disparos enemigos
+            "enemy_total_shots": len(enemy_shots),
+            "enemy_hits": enemy_hits,
+            "enemy_misses": enemy_misses,
             
             # Tiempo
             "game_duration_seconds": duration,
-            "current_streak": 0  # Placeholder para racha actual
+            "current_streak": 0
         }

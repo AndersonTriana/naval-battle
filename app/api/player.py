@@ -19,7 +19,10 @@ from app.storage.data_models import User
 from app.storage.in_memory_store import (
     get_base_fleet,
     get_all_base_fleets,
-    get_player_games
+    get_player_games,
+    games_db,
+    get_user_by_id,
+    get_ship_template
 )
 from app.services.game_service import GameService
 
@@ -40,8 +43,20 @@ def list_available_fleets(
     """
     fleets = get_all_base_fleets()
     
-    return [
-        BaseFleetResponse(
+    result = []
+    for f in fleets:
+        # Obtener detalles de los barcos
+        ships = []
+        for template_id in f.ship_template_ids:
+            template = get_ship_template(template_id)
+            if template:
+                ships.append({
+                    "id": template.id,
+                    "name": template.name,
+                    "size": template.size
+                })
+        
+        fleet_response = BaseFleetResponse(
             id=f.id,
             name=f.name,
             board_size=f.board_size,
@@ -50,8 +65,12 @@ def list_available_fleets(
             created_by=f.created_by,
             created_at=f.created_at
         )
-        for f in fleets
-    ]
+        # Agregar ships como atributo adicional
+        fleet_dict = fleet_response.model_dump()
+        fleet_dict['ships'] = ships
+        result.append(fleet_dict)
+    
+    return result
 
 
 @router.get("/base-fleets/{fleet_id}", response_model=BaseFleetResponse)
@@ -107,14 +126,17 @@ def list_my_games(
     
     games_response = []
     for game in games:
-        stats = game.get_stats()
+        stats = game.get_stats(current_user.id)
         games_response.append(
             GameResponse(
                 id=game.id,
-                player_id=game.player_id,
+                player1_id=game.player1_id,
+                player2_id=game.player2_id,
+                current_turn_player_id=game.current_turn_player_id,
                 base_fleet_id=game.base_fleet_id,
                 board_size=game.board_size,
                 status=game.status,
+                is_multiplayer=game.is_multiplayer,
                 total_shots=stats["total_shots"],
                 hits=stats["hits"],
                 misses=stats["misses"],
@@ -130,3 +152,58 @@ def list_my_games(
         total=len(games_response),
         games=games_response
     )
+
+
+@router.get("/available-multiplayer-games", response_model=dict)
+def list_available_multiplayer_games(
+    current_user: Annotated[User, Depends(get_current_user)],
+    limit: int = 8
+):
+    """
+    Listar partidas multijugador disponibles para unirse.
+    
+    **Requiere autenticación.**
+    
+    Retorna partidas que están esperando un segundo jugador.
+    
+    Args:
+        limit: Número máximo de partidas a retornar (default: 8)
+    """
+    # Filtrar partidas multijugador esperando jugador 2
+    available_games = []
+    
+    for game_id, game in games_db.items():
+        # Solo partidas multijugador esperando jugador 2
+        if (game.is_multiplayer and 
+            game.status == "waiting_for_player2" and 
+            game.player1_id != current_user.id):  # No mostrar propias partidas
+            
+            # Obtener info de la flota
+            fleet = get_base_fleet(game.base_fleet_id)
+            
+            # Obtener nombre del jugador 1
+            player1 = get_user_by_id(game.player1_id)
+            player1_username = player1.username if player1 else "Desconocido"
+            
+            available_games.append({
+                "id": game.id,
+                "player1_id": game.player1_id,
+                "player1_username": player1_username,
+                "board_size": game.board_size,
+                "base_fleet_name": fleet.name if fleet else "Desconocida",
+                "ship_count": len(fleet.ship_template_ids) if fleet else 0,
+                "created_at": game.created_at.isoformat(),
+                "time_waiting": (game.created_at).isoformat()  # Para calcular tiempo en frontend
+            })
+            
+            # Limitar resultados
+            if len(available_games) >= limit:
+                break
+    
+    # Ordenar por más recientes primero
+    available_games.sort(key=lambda x: x["created_at"], reverse=True)
+    
+    return {
+        "total": len(available_games),
+        "games": available_games
+    }

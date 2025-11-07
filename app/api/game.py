@@ -10,12 +10,13 @@ from app.models.game import (
     GameDetailResponse,
     ShotRequest,
     ShotResponse,
-    ShotHistory
+    ShotHistory,
+    JoinGameResponse
 )
 from app.models.ship import ShipPlacement, ShipInstance
 from app.core.dependencies import get_current_user
 from app.storage.data_models import User
-from app.storage.in_memory_store import get_game, get_base_fleet, get_ship_template
+from app.storage.in_memory_store import get_game, get_base_fleet, get_ship_template, get_user_by_id
 from app.services.game_service import GameService
 
 
@@ -41,7 +42,11 @@ def create_game(
     4. Crea árbol N-ario para la flota
     5. Estado inicial: "setup"
     """
-    result = GameService.create_new_game(current_user.id, game_data.base_fleet_id)
+    result = GameService.create_new_game(
+        current_user.id, 
+        game_data.base_fleet_id,
+        game_data.is_multiplayer
+    )
     
     if not result:
         raise HTTPException(
@@ -53,25 +58,99 @@ def create_game(
     base_fleet = get_base_fleet(game_data.base_fleet_id)
     
     # Obtener información de los barcos a colocar
+    # Importante: si hay barcos duplicados (mismo template_id), cada uno debe aparecer
     ships_to_place = []
-    for template_id in result["ship_template_ids"]:
+    for index, template_id in enumerate(result["ship_template_ids"]):
         template = get_ship_template(template_id)
         if template:
             ships_to_place.append({
                 "id": template.id,
                 "name": template.name,
-                "size": template.size
+                "size": template.size,
+                "index": index  # Identificador único para distinguir barcos del mismo tipo
             })
+    
+    message = "Partida creada. "
+    if game_data.is_multiplayer:
+        message += "Esperando que se una el jugador 2. Comparte el ID de la partida."
+    else:
+        message += "Coloca tus barcos para comenzar."
+    
+    # Obtener nombres de usuario
+    player1_user = get_user_by_id(result["player1_id"])
     
     return {
         "id": result["game_id"],
-        "player_id": result["player_id"],
+        "player1_id": result["player1_id"],
+        "player1_username": player1_user.username if player1_user else "Jugador 1",
+        "player2_id": result.get("player2_id"),
+        "player2_username": None,
+        "current_turn_player_id": result.get("current_turn_player_id"),
         "base_fleet_id": result["base_fleet_id"],
         "board_size": result["board_size"],
         "status": result["status"],
-        "message": "Partida creada. Coloca tus barcos para comenzar.",
+        "is_multiplayer": result["is_multiplayer"],
+        "message": message,
         "ships_to_place": ships_to_place,
         "created_at": get_game(result["game_id"]).created_at.isoformat()
+    }
+
+
+@router.post("/{game_id}/join", response_model=dict)
+def join_game(
+    game_id: str,
+    current_user: Annotated[User, Depends(get_current_user)]
+):
+    """
+    Unirse a una partida multijugador como jugador 2.
+    
+    **Requiere autenticación.**
+    
+    Validaciones:
+    - La partida debe existir
+    - La partida debe ser multijugador
+    - La partida debe estar esperando jugador 2
+    - No puedes unirte a tu propia partida
+    """
+    success, message, result = GameService.join_game(game_id, current_user.id)
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=message
+        )
+    
+    # Obtener información de los barcos a colocar
+    # Importante: si hay barcos duplicados (mismo template_id), cada uno debe aparecer
+    base_fleet = get_base_fleet(result["base_fleet_id"])
+    ships_to_place = []
+    for index, template_id in enumerate(result["ship_template_ids"]):
+        template = get_ship_template(template_id)
+        if template:
+            ships_to_place.append({
+                "id": template.id,
+                "name": template.name,
+                "size": template.size,
+                "index": index  # Identificador único para distinguir barcos del mismo tipo
+            })
+    
+    # Obtener nombres de usuario
+    player1_user = get_user_by_id(result["player1_id"])
+    player2_user = get_user_by_id(result["player2_id"])
+    
+    return {
+        "message": message,
+        "game": {
+            "id": result["game_id"],
+            "player1_id": result["player1_id"],
+            "player1_username": player1_user.username if player1_user else "Jugador 1",
+            "player2_id": result["player2_id"],
+            "player2_username": player2_user.username if player2_user else "Jugador 2",
+            "status": result["status"],
+            "board_size": result["board_size"],
+            "is_multiplayer": result["is_multiplayer"]
+        },
+        "ships_to_place": ships_to_place
     }
 
 
@@ -96,7 +175,7 @@ def place_ship(
     - No se superpone con otros barcos
     - Barco pertenece a la flota base
     """
-    # Verificar que el juego pertenece al jugador
+    # Verificar que el juego existe
     game = get_game(game_id)
     if not game:
         raise HTTPException(
@@ -104,7 +183,8 @@ def place_ship(
             detail="Partida no encontrada"
         )
     
-    if game.player_id != current_user.id:
+    # Verificar que el jugador es parte de la partida
+    if current_user.id not in [game.player1_id, game.player2_id]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes acceso a esta partida"
@@ -112,6 +192,7 @@ def place_ship(
     
     success, message, ship_instance = GameService.place_ship(
         game_id=game_id,
+        player_id=current_user.id,
         ship_template_id=placement.ship_template_id,
         start_coordinate=placement.start_coordinate,
         orientation=placement.orientation
@@ -123,9 +204,11 @@ def place_ship(
             detail=message
         )
     
-    # Calcular barcos restantes por colocar
+    # Calcular barcos restantes por colocar para este jugador
     base_fleet = get_base_fleet(game.base_fleet_id)
-    ships_remaining = len(base_fleet.ship_template_ids) - len(game.ships)
+    is_player1 = (current_user.id == game.player1_id)
+    ships_list = game.player1_ships if is_player1 else game.player2_ships
+    ships_remaining = len(base_fleet.ship_template_ids) - len(ships_list)
     
     return {
         "message": "Barco colocado exitosamente",
@@ -133,7 +216,8 @@ def place_ship(
             "name": ship_instance.ship_name,
             "coordinates": [seg.coordinate for seg in ship_instance.segments]
         },
-        "ships_remaining_to_place": ships_remaining
+        "ships_remaining_to_place": ships_remaining,
+        "game_status": game.status
     }
 
 
@@ -159,56 +243,71 @@ def get_board_state(
             detail="Partida no encontrada"
         )
     
-    if game.player_id != current_user.id:
+    # Verificar que el jugador es parte de la partida
+    if current_user.id not in [game.player1_id, game.player2_id]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes acceso a esta partida"
         )
     
-    game_detail = GameService.get_game_detail(game_id)
+    game_detail = GameService.get_game_detail(game_id, current_user.id)
     if not game_detail:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No se pudo obtener el estado del juego"
         )
     
-    stats = game.get_stats()
+    # Determinar qué jugador está consultando
+    is_player1 = (current_user.id == game.player1_id)
+    stats = game.get_stats(current_user.id)
     
-    # Obtener lista de disparos realizados por el jugador (contra la IA)
+    # Obtener disparos según el jugador
+    if is_player1:
+        my_shots = game.player1_shots
+        enemy_shots = game.player2_shots
+    else:
+        my_shots = game.player2_shots
+        enemy_shots = game.player1_shots
+    
+    # Formatear disparos
     player_shots = [
         {
             "coordinate": shot.coordinate,
             "result": shot.result,
             "coordinate_code": shot.coordinate_code
         }
-        for shot in game.shots
-    ] if hasattr(game, 'shots') else []
+        for shot in my_shots
+    ]
     
-    # Obtener lista de disparos realizados por la IA (contra el jugador)
-    enemy_shots = [
+    opponent_shots = [
         {
             "coordinate": shot.coordinate,
             "result": shot.result,
             "coordinate_code": shot.coordinate_code
         }
-        for shot in game.ai_shots
-    ] if hasattr(game, 'ai_shots') else []
+        for shot in enemy_shots
+    ]
     
-    print(f"DEBUG player_shots: {player_shots[:3] if len(player_shots) > 0 else 'empty'}")
-    print(f"DEBUG enemy_shots: {enemy_shots[:3] if len(enemy_shots) > 0 else 'empty'}")
+    # Obtener nombres de usuario
+    player1_user = get_user_by_id(game.player1_id)
+    player2_user = get_user_by_id(game.player2_id) if game.player2_id else None
     
     return {
         "game_id": game.id,
         "board_size": game.board_size,
         "status": game.status,
-        "current_turn": getattr(game, 'current_turn', 'player'),
-        "winner": getattr(game, 'winner', None),
+        "is_multiplayer": game.is_multiplayer,
+        "current_turn_player_id": game.current_turn_player_id,
+        "is_my_turn": (game.current_turn_player_id == current_user.id),
+        "winner": game.winner,
         "player_ships": game_detail["ships"],
-        "player_shots": player_shots,  # Disparos del jugador contra la IA
-        "enemy_shots": enemy_shots,  # Disparos de la IA contra el jugador
+        "player_shots": player_shots,
+        "enemy_shots": opponent_shots,
         "total_shots": stats["total_shots"],
         "hits": stats["hits"],
-        "misses": stats["misses"]
+        "misses": stats["misses"],
+        "player1_username": player1_user.username if player1_user else "Jugador 1",
+        "player2_username": player2_user.username if player2_user else "Esperando..."
     }
 
 
@@ -244,13 +343,19 @@ def fire_shot(
             detail="Partida no encontrada"
         )
     
-    if game.player_id != current_user.id:
+    # Verificar que el jugador es parte de la partida
+    # En vs IA, player2_id es None, así que solo verificamos player1_id
+    valid_players = [game.player1_id]
+    if game.player2_id:
+        valid_players.append(game.player2_id)
+    
+    if current_user.id not in valid_players:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes acceso a esta partida"
         )
     
-    success, message, result = GameService.fire_shot(game_id, shot.coordinate)
+    success, message, result = GameService.fire_shot(game_id, shot.coordinate, current_user.id)
     
     if not success:
         raise HTTPException(
@@ -292,11 +397,16 @@ def get_shots_history(
             detail="Partida no encontrada"
         )
     
-    if game.player_id != current_user.id:
+    # Verificar que el jugador es parte de la partida
+    if current_user.id not in [game.player1_id, game.player2_id]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes acceso a esta partida"
         )
+    
+    # Obtener disparos del jugador actual
+    is_player1 = (current_user.id == game.player1_id)
+    my_shots = game.player1_shots if is_player1 else game.player2_shots
     
     shots = [
         {
@@ -305,7 +415,7 @@ def get_shots_history(
             "result": shot.result,
             "timestamp": shot.timestamp.isoformat()
         }
-        for shot in game.shots
+        for shot in my_shots
     ]
     
     return {
@@ -338,13 +448,14 @@ def get_game_stats(
             detail="Partida no encontrada"
         )
     
-    if game.player_id != current_user.id:
+    # Verificar que el jugador es parte de la partida
+    if current_user.id not in [game.player1_id, game.player2_id]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes acceso a esta partida"
         )
     
-    stats = game.get_stats()
+    stats = game.get_stats(current_user.id)
     
     # Calcular precisión
     accuracy = 0.0
@@ -394,10 +505,11 @@ def delete_game(
             detail="Partida no encontrada"
         )
     
-    if game.player_id != current_user.id:
+    # Verificar que el jugador es parte de la partida (solo el creador puede eliminar)
+    if current_user.id != game.player1_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes acceso a esta partida"
+            detail="Solo el creador de la partida puede eliminarla"
         )
     
     # Eliminar del storage

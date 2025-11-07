@@ -18,9 +18,22 @@ const MyGamesPage = () => {
   const loadGames = async () => {
     setLoading(true);
     try {
-      const statusParam = filter === 'all' ? null : filter;
-      const data = await gameService.getMyGames(statusParam);
-      setGames(data.games || []);
+      // No enviar filtro al backend, filtrar en frontend
+      const data = await gameService.getMyGames();
+      let filteredGames = data.games || [];
+      
+      // Filtrar en frontend según el filtro seleccionado
+      if (filter === 'in_progress') {
+        filteredGames = filteredGames.filter(g => 
+          !['finished', 'player1_won', 'player2_won'].includes(g.status)
+        );
+      } else if (filter === 'finished') {
+        filteredGames = filteredGames.filter(g => 
+          ['finished', 'player1_won', 'player2_won'].includes(g.status)
+        );
+      }
+      
+      setGames(filteredGames);
     } catch (error) {
       console.error('Error al cargar juegos:', error);
     } finally {
@@ -29,10 +42,8 @@ const MyGamesPage = () => {
   };
 
   const handleContinueGame = async (gameId) => {
-    const result = await loadGame(gameId);
-    if (result.success) {
-      navigate('/game');
-    }
+    // Navegar a la página del juego con el ID en la URL
+    navigate(`/game/${gameId}`);
   };
 
   const handleDeleteGame = async (gameId) => {
@@ -87,13 +98,8 @@ const MyGamesPage = () => {
       {/* Lista de juegos */}
       {games.length === 0 ? (
         <div className="text-center py-12 bg-gray-800 rounded-lg">
-          <p className="text-gray-400 text-lg mb-4">No hay juegos</p>
-          <button
-            onClick={() => navigate('/game')}
-            className="btn-primary"
-          >
-            Comenzar Nuevo Juego
-          </button>
+          <div className="text-6xl mb-4">🎮</div>
+          <p className="text-gray-400 text-lg">No hay juegos en esta categoría</p>
         </div>
       ) : (
         <div className="grid gap-4">
@@ -112,27 +118,54 @@ const MyGamesPage = () => {
 };
 
 const GameCard = ({ game, onContinue, onDelete }) => {
-  const isFinished = game.status === 'finished';
-  const isInProgress = game.status === 'in_progress' || game.status === 'placing_ships';
+  const isFinished = ['finished', 'player1_won', 'player2_won'].includes(game.status);
+  const isWaitingForPlayer = game.status === 'waiting_for_player2';
+  const isInProgress = !isFinished && !isWaitingForPlayer;
+  const isMultiplayer = game.is_multiplayer || false;
   
   const statusColor = {
+    setup: 'text-blue-400',
     placing_ships: 'text-blue-400',
-    in_progress: 'text-yellow-400',
-    finished: 'text-gray-400'
+    waiting_for_player2: 'text-yellow-400',
+    both_players_setup: 'text-cyan-400',
+    player1_setup: 'text-blue-400',
+    player2_setup: 'text-purple-400',
+    in_progress: 'text-green-400',
+    player1_turn: 'text-green-400',
+    player2_turn: 'text-green-400',
+    finished: 'text-gray-400',
+    player1_won: 'text-yellow-400',
+    player2_won: 'text-yellow-400'
   }[game.status] || 'text-gray-400';
 
   const statusText = {
+    setup: 'Colocando Barcos',
     placing_ships: 'Colocando Barcos',
+    waiting_for_player2: '⏳ Esperando Jugador 2',
+    both_players_setup: '🚢 Colocando Barcos',
+    player1_setup: '🚢 Jugador 1 Setup',
+    player2_setup: '🚢 Jugador 2 Setup',
     in_progress: 'En Progreso',
-    finished: 'Finalizado'
+    player1_turn: '🎯 Turno J1',
+    player2_turn: '🎯 Turno J2',
+    finished: 'Finalizado',
+    player1_won: '🏆 Ganó J1',
+    player2_won: '🏆 Ganó J2'
   }[game.status] || game.status;
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 flex justify-between items-center hover:bg-gray-750 transition-colors">
       <div className="flex-1">
-        <h3 className="text-white font-bold mb-1">
-          Tablero {game.board_size}x{game.board_size}
-        </h3>
+        <div className="flex items-center gap-2 mb-1">
+          <h3 className="text-white font-bold">
+            Tablero {game.board_size}x{game.board_size}
+          </h3>
+          {isMultiplayer && (
+            <span className="px-2 py-0.5 bg-purple-600 text-white text-xs font-bold rounded">
+              👥 Multijugador
+            </span>
+          )}
+        </div>
         <p className={`text-sm font-medium ${statusColor}`}>
           {statusText}
         </p>
@@ -147,19 +180,35 @@ const GameCard = ({ game, onContinue, onDelete }) => {
       </div>
 
       <div className="flex gap-2">
+        {isWaitingForPlayer && (
+          <button
+            onClick={() => onContinue(game.id)}
+            className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition-colors text-sm"
+          >
+            ⏳ Ver Partida
+          </button>
+        )}
         {isInProgress && (
           <button
             onClick={() => onContinue(game.id)}
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition-colors text-sm"
           >
-            Continuar
+            {game.status.includes('setup') ? '🚢 Colocar Barcos' : '⚔️ Continuar'}
+          </button>
+        )}
+        {isFinished && (
+          <button
+            onClick={() => onContinue(game.id)}
+            className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors text-sm"
+          >
+            👁️ Ver Resultado
           </button>
         )}
         <button
           onClick={() => onDelete(game.id)}
           className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors text-sm"
         >
-          Eliminar
+          🗑️ Eliminar
         </button>
       </div>
     </div>

@@ -10,20 +10,32 @@ from app.models.ship import ShipInstance
 
 class GameStatus(str, Enum):
     """Estados posibles de una partida."""
-    SETUP = "setup"
-    IN_PROGRESS = "in_progress"
-    FINISHED = "finished"
+    WAITING_FOR_PLAYER2 = "waiting_for_player2"  # Esperando que se una el jugador 2
+    BOTH_PLAYERS_SETUP = "both_players_setup"  # Ambos jugadores colocando barcos simultáneamente
+    PLAYER1_TURN = "player1_turn"  # Turno del jugador 1
+    PLAYER2_TURN = "player2_turn"  # Turno del jugador 2
+    FINISHED = "finished"  # Juego terminado
+    PLAYER1_WON = "player1_won"  # Jugador 1 ganó
+    PLAYER2_WON = "player2_won"  # Jugador 2 ganó
+    
+    # Estados legacy para compatibilidad con vs IA
+    SETUP = "setup"  # Colocando barcos (vs IA)
+    IN_PROGRESS = "in_progress"  # Jugando (vs IA)
+    PLAYER1_SETUP = "player1_setup"  # Legacy - ahora usa BOTH_PLAYERS_SETUP
+    PLAYER2_SETUP = "player2_setup"  # Legacy - ahora usa BOTH_PLAYERS_SETUP
 
 
 class GameCreate(BaseModel):
     """Modelo para crear una nueva partida."""
     base_fleet_id: str = Field(description="ID de la flota base a utilizar")
+    is_multiplayer: bool = Field(default=False, description="True para juego de 2 jugadores, False para vs IA")
     
     model_config = {
         "json_schema_extra": {
             "examples": [
                 {
-                    "base_fleet_id": "550e8400-e29b-41d4-a716-446655440010"
+                    "base_fleet_id": "550e8400-e29b-41d4-a716-446655440010",
+                    "is_multiplayer": True
                 }
             ]
         }
@@ -102,10 +114,13 @@ class ShotHistory(BaseModel):
 class GameResponse(BaseModel):
     """Modelo de respuesta con información de una partida."""
     id: str = Field(description="ID único de la partida (UUID)")
-    player_id: str = Field(description="ID del jugador")
+    player1_id: str = Field(description="ID del jugador 1")
+    player2_id: Optional[str] = Field(None, description="ID del jugador 2 (None si es vs IA o esperando jugador)")
+    current_turn_player_id: Optional[str] = Field(None, description="ID del jugador en turno actual")
     base_fleet_id: str = Field(description="ID de la flota base utilizada")
     board_size: int = Field(description="Tamaño del tablero")
     status: GameStatus = Field(description="Estado actual de la partida")
+    is_multiplayer: bool = Field(description="Indica si es partida multijugador")
     total_shots: int = Field(description="Total de disparos realizados")
     hits: int = Field(description="Número de impactos")
     misses: int = Field(description="Número de fallos")
@@ -172,6 +187,29 @@ class GameListResponse(BaseModel):
                 {
                     "total": 2,
                     "games": []
+                }
+            ]
+        }
+    }
+
+
+class JoinGameResponse(BaseModel):
+    """Modelo de respuesta al unirse a una partida."""
+    game: GameResponse = Field(description="Información de la partida")
+    message: str = Field(description="Mensaje de confirmación")
+    
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "game": {
+                        "id": "550e8400-e29b-41d4-a716-446655440020",
+                        "player1_id": "550e8400-e29b-41d4-a716-446655440000",
+                        "player2_id": "550e8400-e29b-41d4-a716-446655440001",
+                        "status": "player1_setup",
+                        "is_multiplayer": True
+                    },
+                    "message": "Te has unido exitosamente a la partida"
                 }
             ]
         }

@@ -46,6 +46,17 @@ function App() {
         />
 
         <Route
+          path="/game/:gameId"
+          element={
+            <ProtectedRoute playerOnly>
+              <Layout>
+                <GamePage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/my-games"
           element={
             <ProtectedRoute playerOnly>

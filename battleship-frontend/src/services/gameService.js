@@ -8,9 +8,24 @@ export const gameService = {
   },
 
   // Crear nueva partida
-  async createGame(baseFleetId) {
+  async createGame(baseFleetId, isMultiplayer = false) {
     const response = await api.post('/game/create', {
-      base_fleet_id: baseFleetId
+      base_fleet_id: baseFleetId,
+      is_multiplayer: isMultiplayer
+    });
+    return response.data;
+  },
+
+  // Unirse a una partida multijugador
+  async joinGame(gameId) {
+    const response = await api.post(`/game/${gameId}/join`);
+    return response.data;
+  },
+
+  // Obtener partidas disponibles para unirse
+  async getAvailableGames(limit = 8) {
+    const response = await api.get('/player/available-multiplayer-games', {
+      params: { limit }
     });
     return response.data;
   },

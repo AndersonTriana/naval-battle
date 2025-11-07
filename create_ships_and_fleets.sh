@@ -240,18 +240,19 @@ curl -s -X POST "${API_URL}/admin/base-fleets" \
   }" > /dev/null
 echo "✅ Flota Clásica (10x10): Portaaviones, Acorazado, Destructor, Submarino, Lancha"
 
-# Flota 2: Rápida (tablero 8x8)
+# Flota 2: Rápida con barcos repetidos (tablero 8x8)
 echo "Creando Flota Rápida..."
-FLEET2_SHIPS="[\"${SHIP_IDS[5]}\",\"${SHIP_IDS[6]}\",\"${SHIP_IDS[2]}\",\"${SHIP_IDS[0]}\",\"${SHIP_IDS[1]}\"]"
+# 2x Destructor, 1x Crucero Ligero, 2x Submarino, 3x Lancha Patrullera
+FLEET2_SHIPS="[\"${SHIP_IDS[5]}\",\"${SHIP_IDS[5]}\",\"${SHIP_IDS[6]}\",\"${SHIP_IDS[2]}\",\"${SHIP_IDS[2]}\",\"${SHIP_IDS[0]}\",\"${SHIP_IDS[0]}\",\"${SHIP_IDS[0]}\"]"
 curl -s -X POST "${API_URL}/admin/base-fleets" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d "{
     \"name\": \"Flota Rápida\",
-    \"board_size\": 8,
+    \"board_size\": 10,
     \"ship_template_ids\": ${FLEET2_SHIPS}
   }" > /dev/null
-echo "✅ Flota Rápida (8x8): Destructor, Crucero Ligero, Submarino, Lanchas"
+echo "✅ Flota Rápida (10x10): 2x Destructor, 1x Crucero, 2x Submarino, 3x Lancha"
 
 # Flota 3: Armada Completa (tablero 15x15)
 echo "Creando Armada Completa..."
@@ -266,9 +267,10 @@ curl -s -X POST "${API_URL}/admin/base-fleets" \
   }" > /dev/null
 echo "✅ Armada Completa (15x15): 8 barcos variados"
 
-# Flota 4: Fuerza de Ataque (tablero 12x12)
+# Flota 4: Fuerza de Ataque con barcos repetidos (tablero 12x12)
 echo "Creando Fuerza de Ataque..."
-FLEET4_SHIPS="[\"${SHIP_IDS[9]}\",\"${SHIP_IDS[5]}\",\"${SHIP_IDS[6]}\",\"${SHIP_IDS[10]}\",\"${SHIP_IDS[14]}\"]"
+# 1x Portaaviones, 3x Destructor, 2x Asalto Anfibio, 2x Buque Misiles
+FLEET4_SHIPS="[\"${SHIP_IDS[9]}\",\"${SHIP_IDS[5]}\",\"${SHIP_IDS[5]}\",\"${SHIP_IDS[5]}\",\"${SHIP_IDS[10]}\",\"${SHIP_IDS[10]}\",\"${SHIP_IDS[14]}\",\"${SHIP_IDS[14]}\"]"
 curl -s -X POST "${API_URL}/admin/base-fleets" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
@@ -277,20 +279,21 @@ curl -s -X POST "${API_URL}/admin/base-fleets" \
     \"board_size\": 12,
     \"ship_template_ids\": ${FLEET4_SHIPS}
   }" > /dev/null
-echo "✅ Fuerza de Ataque (12x12): Portaaviones, Destructores, Asalto Anfibio, Misiles"
+echo "✅ Fuerza de Ataque (12x12): 1x Portaaviones, 3x Destructor, 2x Asalto, 2x Misiles"
 
-# Flota 5: Defensa Costera (tablero 10x10)
+# Flota 5: Defensa Costera con barcos repetidos (tablero 10x10)
 echo "Creando Defensa Costera..."
-FLEET5_SHIPS="[\"${SHIP_IDS[3]}\",\"${SHIP_IDS[4]}\",\"${SHIP_IDS[12]}\",\"${SHIP_IDS[13]}\",\"${SHIP_IDS[14]}\"]"
+# 2x Corbeta, 2x Fragata, 2x Escolta, 3x Dragaminas
+FLEET5_SHIPS="[\"${SHIP_IDS[3]}\",\"${SHIP_IDS[3]}\",\"${SHIP_IDS[4]}\",\"${SHIP_IDS[4]}\",\"${SHIP_IDS[12]}\",\"${SHIP_IDS[12]}\",\"${SHIP_IDS[13]}\",\"${SHIP_IDS[13]}\",\"${SHIP_IDS[13]}\"]"
 curl -s -X POST "${API_URL}/admin/base-fleets" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d "{
     \"name\": \"Defensa Costera\",
-    \"board_size\": 10,
+    \"board_size\": 12,
     \"ship_template_ids\": ${FLEET5_SHIPS}
   }" > /dev/null
-echo "✅ Defensa Costera (10x10): Corbeta, Fragata, Escolta, Dragaminas, Misiles"
+echo "✅ Defensa Costera (12x12): 2x Corbeta, 2x Fragata, 2x Escolta, 3x Dragaminas"
 
 echo ""
 echo "✅ 5 flotas creadas exitosamente"
@@ -302,9 +305,11 @@ echo "   - 15 tipos de barcos creados"
 echo "   - 5 flotas configuradas"
 echo ""
 echo "🎮 Ahora puedes jugar con las siguientes flotas:"
-echo "   1. Flota Clásica (10x10) - 5 barcos"
-echo "   2. Flota Rápida (8x8) - 5 barcos"
-echo "   3. Armada Completa (15x15) - 8 barcos"
-echo "   4. Fuerza de Ataque (12x12) - 5 barcos"
-echo "   5. Defensa Costera (10x10) - 5 barcos"
+echo "   1. Flota Clásica (10x10) - 5 barcos únicos"
+echo "   2. Flota Rápida (10x10) - 8 barcos (con repetidos)"
+echo "   3. Armada Completa (15x15) - 8 barcos variados"
+echo "   4. Fuerza de Ataque (12x12) - 8 barcos (con repetidos)"
+echo "   5. Defensa Costera (12x12) - 9 barcos (con repetidos)"
+echo ""
+echo "💡 Las flotas 2, 4 y 5 incluyen barcos repetidos del mismo tipo"
 echo ""

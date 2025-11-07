@@ -10,12 +10,12 @@ export const useGame = () => {
   const [shots, setShots] = useState([]);
 
   // Crear nuevo juego
-  const createGame = useCallback(async (baseFleetId) => {
+  const createGame = useCallback(async (baseFleetId, isMultiplayer = false) => {
     setLoading(true);
     setError(null);
     
     try {
-      const data = await gameService.createGame(baseFleetId);
+      const data = await gameService.createGame(baseFleetId, isMultiplayer);
       setGame(data);
       return { success: true, data };
     } catch (err) {
@@ -128,6 +128,37 @@ export const useGame = () => {
     }
   }, [game]);
 
+  // Unirse a un juego
+  const joinGame = useCallback(async (gameId) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await gameService.joinGame(gameId);
+      
+      // Actualizar estado del juego con los datos recibidos
+      if (data.game) {
+        setGame({
+          id: data.game.id,
+          status: data.game.status,
+          board_size: data.game.board_size,
+          is_multiplayer: data.game.is_multiplayer,
+          player1_id: data.game.player1_id,
+          player2_id: data.game.player2_id,
+          ships_to_place: data.ships_to_place || []
+        });
+      }
+
+      return { success: true, data };
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail || 'Error al unirse a la partida';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Cargar juego existente
   const loadGame = useCallback(async (gameId) => {
     setLoading(true);
@@ -143,7 +174,8 @@ export const useGame = () => {
       setGame({ 
         id: gameId, 
         status: boardData.status,
-        board_size: boardData.board_size
+        board_size: boardData.board_size,
+        is_multiplayer: boardData.is_multiplayer
       });
       setBoard(boardData);
       setStats(statsData);
@@ -178,6 +210,7 @@ export const useGame = () => {
     
     // Acciones
     createGame,
+    joinGame,
     placeShip,
     shoot,
     refreshBoard,

@@ -77,10 +77,22 @@ const FleetSelector = ({ onFleetSelected }) => {
             </p>
             
             <div className="space-y-2">
-              <p className="text-sm text-gray-300 font-medium">
+              <p className="text-sm text-gray-300 font-medium mb-2">
                 {fleet.ship_count} barcos:
               </p>
-              {/* Aquí se mostrarían los barcos si vienen en el response */}
+              {fleet.ships && fleet.ships.length > 0 ? (
+                <div className="space-y-1">
+                  {fleet.ships.map((ship, index) => (
+                    <div key={`${ship.id}-${index}`} className="flex items-center gap-2 text-sm text-gray-400">
+                      <span className="text-indigo-400">⚓</span>
+                      <span>{ship.name}</span>
+                      <span className="text-xs text-gray-500">({ship.size} casillas)</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500">Detalles no disponibles</p>
+              )}
             </div>
 
             {selectedFleet?.id === fleet.id && (

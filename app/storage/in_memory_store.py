@@ -147,6 +147,28 @@ def delete_ship_template(template_id: str) -> bool:
 
 
 # Funciones auxiliares para flotas base
+def validate_fleet_capacity(board_size: int, ship_template_ids: list[str]) -> tuple[bool, str]:
+    """
+    Valida que los barcos de una flota no ocupen más del 80% del tablero.
+    
+    Returns:
+        tuple[bool, str]: (es_válido, mensaje_error)
+    """
+    total_cells = 0
+    for template_id in ship_template_ids:
+        template = get_ship_template(template_id)
+        if template:
+            total_cells += template.size
+    
+    board_total_cells = board_size * board_size
+    max_allowed_cells = board_total_cells * 0.8
+    
+    if total_cells > max_allowed_cells:
+        return False, f"Los barcos ocupan {total_cells} celdas, pero el máximo permitido es {int(max_allowed_cells)} celdas (80% de {board_total_cells})"
+    
+    return True, ""
+
+
 def create_base_fleet(name: str, board_size: int, ship_template_ids: list[str], 
                      created_by: str) -> BaseFleet:
     """Crea una nueva flota base."""
@@ -202,28 +224,29 @@ def delete_base_fleet(fleet_id: str) -> bool:
 
 
 # Funciones auxiliares para partidas
-def create_game(player_id: str, base_fleet_id: str, board_size: int, 
-               abb_tree, fleet_tree) -> Game:
+def create_game(player1_id: str, base_fleet_id: str, board_size: int, 
+               player1_abb_tree, player1_fleet_tree, is_multiplayer: bool = False) -> Game:
     """Crea una nueva partida."""
     game_id = str(uuid.uuid4())
     
     game = Game(
         id=game_id,
-        player_id=player_id,
+        player1_id=player1_id,
         base_fleet_id=base_fleet_id,
         board_size=board_size,
-        status="setup",
-        abb_tree=abb_tree,
-        fleet_tree=fleet_tree,
-        created_at=datetime.now()
+        status="waiting_for_player2" if is_multiplayer else "setup",
+        is_multiplayer=is_multiplayer,
+        player1_abb_tree=player1_abb_tree,
+        player1_fleet_tree=player1_fleet_tree,
+        current_turn_player_id=None if is_multiplayer else player1_id
     )
     
     games_db[game_id] = game
     
     # Actualizar índice de partidas por jugador
-    if player_id not in player_games:
-        player_games[player_id] = []
-    player_games[player_id].append(game_id)
+    if player1_id not in player_games:
+        player_games[player1_id] = []
+    player_games[player1_id].append(game_id)
     
     return game
 
@@ -253,5 +276,45 @@ def update_game_status(game_id: str, status: str) -> Game | None:
     game.status = status
     if status == "finished":
         game.finished_at = datetime.now()
+    
+    return game
+
+
+def join_game_as_player2(game_id: str, player2_id: str, player2_abb_tree, player2_fleet_tree) -> Game | None:
+    """
+    Permite que un segundo jugador se una a una partida multijugador.
+    
+    Args:
+        game_id: ID de la partida
+        player2_id: ID del jugador 2
+        player2_abb_tree: ABB del jugador 2
+        player2_fleet_tree: Árbol de flota del jugador 2
+    
+    Returns:
+        Game actualizado o None si no se puede unir
+    """
+    game = games_db.get(game_id)
+    if not game:
+        return None
+    
+    if not game.is_multiplayer:
+        return None
+    
+    if game.status != "waiting_for_player2":
+        return None
+    
+    if game.player1_id == player2_id:
+        return None
+    
+    # Unir jugador 2
+    game.player2_id = player2_id
+    game.player2_abb_tree = player2_abb_tree
+    game.player2_fleet_tree = player2_fleet_tree
+    game.status = "both_players_setup"  # Ambos jugadores pueden colocar barcos simultáneamente
+    
+    # Actualizar índice de partidas por jugador
+    if player2_id not in player_games:
+        player_games[player2_id] = []
+    player_games[player2_id].append(game_id)
     
     return game
