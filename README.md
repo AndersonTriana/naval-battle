@@ -1,6 +1,6 @@
-# 🚢 Batalla Naval API
+# 🚢 Batalla Naval
 
-API REST para juego de Batalla Naval implementada con **FastAPI**, **Árbol Binario de Búsqueda (ABB)** y **Árbol N-ario (First-Child, Next-Sibling)**.
+Juego de Batalla Naval con **API REST (FastAPI)** y **Frontend (React)**, implementado con **Árbol Binario de Búsqueda (ABB)** y **Árbol N-ario (First-Child, Next-Sibling)**.
 
 ## 📋 Características
 
@@ -34,78 +34,62 @@ API REST para juego de Batalla Naval implementada con **FastAPI**, **Árbol Bina
 
 ### Requisitos Previos
 - Python 3.12+
-- pip
+- Node.js 18+
+- npm o yarn
 
-### 1. Instalar Dependencias
+### Backend (API)
 
 ```bash
+# 1. Instalar dependencias
 pip install -r requirements.txt
-```
 
-### 2. Configurar Variables de Entorno
-
-El archivo `.env` ya está configurado con valores por defecto:
-
-```env
-APP_ENV=development
-APP_HOST=0.0.0.0
-APP_PORT=8000
-LOG_LEVEL=INFO
-SECRET_KEY=batalla-naval-secret-key-change-in-production-12345678
-```
-
-### 3. Ejecutar la API
-
-```bash
+# 2. Ejecutar servidor
 python -m app.main
+# API disponible en http://localhost:8000
 ```
 
-O usando uvicorn directamente:
+### Frontend (React)
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# 1. Ir al directorio del frontend
+cd battleship-frontend
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Ejecutar servidor de desarrollo
+npm run dev
+# Frontend disponible en http://localhost:5173
 ```
 
-### 4. Acceder a la Documentación
+### Acceso Rápido
 
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-- **Root**: http://localhost:8000/
+- **Frontend**: http://localhost:5173
+- **API Docs**: http://localhost:8000/docs
+- **Usuario Admin**: `admin` / `admin123`
 
 ## 📁 Estructura del Proyecto
 
 ```
 batalla-naval/
-├── app/
-│   ├── __init__.py
-│   ├── main.py                 # Punto de entrada FastAPI
-│   ├── models/                 # Modelos Pydantic
-│   │   ├── user.py
-│   │   ├── ship.py
-│   │   ├── game.py
-│   │   └── board.py
-│   ├── api/                    # Routers/Endpoints
-│   │   ├── auth.py
-│   │   ├── admin.py
-│   │   └── player.py
-│   ├── core/                   # Configuración y utilidades
-│   │   ├── config.py
-│   │   ├── security.py
-│   │   └── dependencies.py
+├── app/                        # Backend (FastAPI)
+│   ├── api/                    # Endpoints REST
 │   ├── services/               # Lógica de negocio
-│   │   ├── board_service.py
-│   │   ├── game_service.py
-│   │   └── ship_service.py
-│   ├── structures/             # Estructuras de datos
-│   │   ├── binary_search_tree.py  # ABB (movido de api_abb)
-│   │   ├── abb_node.py            # Nodo del ABB
-│   │   ├── n_ary_tree.py          # Árbol N-ario
-│   │   └── coordinate_utils.py    # Utilidades de coordenadas
-│   └── storage/                # Almacenamiento en memoria
-│       ├── in_memory_store.py
-│       └── data_models.py
+│   ├── structures/             # ABB y Árbol N-ario
+│   ├── storage/                # Almacenamiento en memoria
+│   └── main.py
+├── battleship-frontend/        # Frontend (React)
+│   ├── src/
+│   │   ├── components/         # Componentes React
+│   │   │   ├── Game/           # Tableros, barcos, controles
+│   │   │   └── Layout/         # UI general
+│   │   ├── pages/              # Páginas principales
+│   │   ├── hooks/              # Custom hooks
+│   │   ├── services/           # API client
+│   │   └── context/            # Context API
+│   ├── package.json
+│   └── vite.config.js
 ├── requirements.txt
-├── .env
 └── README.md
 ```
 
@@ -284,11 +268,17 @@ POST /player/games/{game_id}/shoot
 
 ## 🔧 Tecnologías Utilizadas
 
-- **FastAPI** - Framework web moderno y rápido
+### Backend
+- **FastAPI** - Framework web
 - **Pydantic** - Validación de datos
-- **Passlib** - Hashing de contraseñas
-- **Python-Jose** - JWT tokens
-- **Uvicorn** - Servidor ASGI
+- **JWT** - Autenticación
+
+### Frontend
+- **React** - UI library
+- **Vite** - Build tool
+- **TailwindCSS** - Estilos
+- **React Router** - Navegación
+- **Axios** - HTTP client
 
 ## 📊 Algoritmos Implementados
 
@@ -320,14 +310,18 @@ def coordinate_to_code(coordinate: str) -> int:
 
 ## 🎯 Características Técnicas
 
-- ✅ Sin base de datos (todo en memoria)
+### Backend
 - ✅ Autenticación JWT
-- ✅ Validación con Pydantic
-- ✅ Documentación automática (Swagger/ReDoc)
+- ✅ Documentación automática (Swagger)
 - ✅ CORS configurado
-- ✅ Tipado estático completo
-- ✅ Arquitectura limpia (separación de capas)
-- ✅ Principios SOLID
+- ✅ Arquitectura limpia
+
+### Frontend
+- ✅ Interfaz moderna y responsive
+- ✅ Drag & Drop para colocar barcos
+- ✅ Modo vs IA y Multijugador
+- ✅ Polling en tiempo real
+- ✅ Estadísticas en vivo
 
 ## 📝 Notas Importantes
 
@@ -358,4 +352,4 @@ Este proyecto es para fines educativos.
 
 ---
 
-**Desarrollado con ❤️ usando FastAPI, ABB y Árbol N-ario**
+**Desarrollado con FastAPI + React, ABB y Árbol N-ario**
