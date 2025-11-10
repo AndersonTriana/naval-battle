@@ -397,9 +397,12 @@ class GameService:
                 ship_sunk = is_sunk
                 
                 # Actualizar estado del barco en la lista
-                ship_template_id = ship_node.data.get("ship_template_id")
+                # Buscar el barco por coordenada en lugar de solo por template_id
+                # para manejar correctamente múltiples barcos del mismo tipo
                 for ship in target_ships:
-                    if ship.ship_template_id == ship_template_id:
+                    # Verificar si este barco contiene la coordenada impactada
+                    ship_has_coordinate = any(seg.coordinate_code == coordinate_code for seg in ship.segments)
+                    if ship_has_coordinate:
                         # Marcar segmento como impactado
                         for segment in ship.segments:
                             if segment.coordinate_code == coordinate_code:
@@ -411,6 +414,9 @@ class GameService:
                         # Si todos los segmentos están impactados, el barco está hundido
                         if all_segments_hit:
                             ship.is_sunk = True
+                            print(f"🔴 DEBUG: Barco {ship.ship_name} marcado como hundido. is_sunk={ship.is_sunk}")
+                            print(f"🔴 DEBUG: target_ships es player1_ships={target_ships is game.player1_ships}, player2_ships={target_ships is game.player2_ships}")
+                            print(f"🔴 DEBUG: ID del barco en memoria: {id(ship)}")
                         break
                 
                 # Verificar si todos los barcos fueron hundidos

@@ -128,6 +128,12 @@ class Game:
         
         # Barcos enemigos hundidos
         enemy_ships_sunk = sum(1 for ship in enemy_ships if ship.is_sunk)
+        print(f"🔵 DEBUG get_stats: player_id={player_id}, enemy_ships count={len(enemy_ships)}, enemy_ships_sunk={enemy_ships_sunk}")
+        print(f"🔵 DEBUG: my_ships count={len(my_ships)}, my_ships_sunk={player_ships_sunk}")
+        for ship in my_ships:
+            print(f"  MY - {ship.ship_name}: is_sunk={ship.is_sunk}, id={id(ship)}")
+        for ship in enemy_ships:
+            print(f"  ENEMY - {ship.ship_name}: is_sunk={ship.is_sunk}, id={id(ship)}")
         
         # Estadísticas de disparos enemigos
         enemy_hits = sum(1 for shot in enemy_shots if shot.result in ["hit", "sunk"])

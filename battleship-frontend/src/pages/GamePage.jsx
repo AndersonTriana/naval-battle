@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useGame } from '../hooks/useGame';
+import { useAuth } from '../context/AuthContext';
 import FleetSelector from '../components/Game/FleetSelector';
 import ShipPlacementDragDrop from '../components/Game/ShipPlacementDragDrop';
 import Board from '../components/Game/Board';
@@ -17,6 +18,7 @@ import { gameService } from '../services/gameService';
 
 const GamePage = () => {
   const { gameId } = useParams();
+  const { user } = useAuth();
   const {
     game,
     board,
@@ -93,10 +95,9 @@ const GamePage = () => {
       }
       
       // Detectar cambios de turno en multijugador
-      if (isMultiplayer && gamePhase === 'playing' && game.current_turn_player_id) {
+      if (isMultiplayer && gamePhase === 'playing' && game.current_turn_player_id && user) {
         if (previousTurnPlayerId && previousTurnPlayerId !== game.current_turn_player_id) {
           // El turno cambió
-          const user = JSON.parse(localStorage.getItem('user') || '{}');
           const isMyTurn = game.current_turn_player_id === user.id;
           
           if (isMyTurn) {
@@ -379,7 +380,7 @@ const GamePage = () => {
               shots={board.player_shots || []}
               showShips={false}
               title="🎯 Tablero Enemigo"
-              disabled={loading}
+              disabled={loading || (isMultiplayer && !board.is_my_turn)}
               onCellClick={handleShoot}
             />
           </div>
@@ -394,12 +395,14 @@ const GamePage = () => {
       )}
 
       {/* FASE 4: Juego Terminado */}
-      {gamePhase === 'finished' && stats && (() => {
+      {gamePhase === 'finished' && stats && user && (() => {
         // Determinar si el jugador actual ganó
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
         const isWinner = isMultiplayer 
           ? board?.winner === user.id 
           : board?.winner === 'player';
+        
+        // Debug: Log para verificar la comparación
+        console.log('Game finished - Winner:', board?.winner, 'Current user:', user.id, 'Is winner:', isWinner);
         
         return (
           <div className="text-center">

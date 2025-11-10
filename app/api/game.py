@@ -482,6 +482,7 @@ def get_game_stats(
         "ships_total": stats["ships_total"],
         "ships_sunk": stats["ships_sunk"],
         "ships_remaining": stats["ships_remaining"],
+        "enemy_ships_sunk": stats["enemy_ships_sunk"],
         "game_duration_minutes": duration_minutes
     }
 
